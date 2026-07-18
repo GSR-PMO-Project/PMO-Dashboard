@@ -1,0 +1,30 @@
+import { Router } from "express";
+import { conferencesRouter } from "./conferences.js";
+import { tracksRouter } from "./tracks.js";
+import { speakersRouter } from "./speakers.js";
+import { sessionsRouter } from "./sessions.js";
+import { sessionSpeakersRouter } from "./sessionSpeakers.js";
+import { vipInvitationsRouter } from "./vipInvitations.js";
+import { registrationsRouter } from "./registrations.js";
+import { announcementsRouter } from "./announcements.js";
+import { notificationsRouter } from "./notifications.js";
+import { profilesRouter } from "./profiles.js";
+import { checkinLogsRouter } from "./checkinLogs.js";
+import { feedbackRouter } from "./feedback.js";
+import { viewsRouter } from "./views.js";
+
+export const apiRouter = Router();
+
+apiRouter.use("/conferences", conferencesRouter);
+apiRouter.use("/tracks", tracksRouter);
+apiRouter.use("/speakers", speakersRouter);
+apiRouter.use("/sessions", sessionsRouter);
+apiRouter.use("/session-speakers", sessionSpeakersRouter);
+apiRouter.use("/vip-invitations", vipInvitationsRouter);
+apiRouter.use("/registrations", registrationsRouter);
+apiRouter.use("/announcements", announcementsRouter);
+apiRouter.use("/notifications", notificationsRouter);
+apiRouter.use("/profiles", profilesRouter);
+apiRouter.use("/checkin-logs", checkinLogsRouter);
+apiRouter.use("/feedback", feedbackRouter);
+apiRouter.use("/views", viewsRouter);
