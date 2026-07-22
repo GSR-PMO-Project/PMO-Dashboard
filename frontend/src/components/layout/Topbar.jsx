@@ -7,9 +7,9 @@ function Topbar() {
 
   const pageInfo = {
     "/": {
-      title: "Overview",
-      subtitle: "Welcome back! Here's what's happening.",
-    },
+  title: "Dashboard Overview",
+  subtitle: "GSR Admin Console — Global Students Research Conference",
+},
     "/conferences": {
       title: "Conferences",
       subtitle: "Manage conferences and tracks.",

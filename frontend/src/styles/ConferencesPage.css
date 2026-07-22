@@ -1,0 +1,380 @@
+.conferences-page {
+  width: 100%;
+}
+
+.conferences-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.conferences-page-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: var(--text);
+}
+
+.conferences-page-header p {
+  margin: 5px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.primary-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 14px;
+
+  border: none;
+  border-radius: 10px;
+
+  background-color: var(--purple-btn);
+  color: white;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+.conference-tabs {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.conference-tab {
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.conference-tab.active {
+  color: var(--purple-mid);
+  border-bottom-color: var(--purple-mid);
+}
+.conferences-card {
+  margin-top: 24px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.conferences-card-header {
+  min-height: 70px;
+  padding: 16px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.conferences-card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.conferences-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.conferences-page {
+  width: 100%;
+}
+
+/* Tabs */
+.conference-tabs {
+  display: flex;
+  gap: 24px;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.conference-tab {
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.conference-tab.active {
+  color: var(--purple-mid);
+  border-bottom-color: var(--purple-mid);
+}
+
+/* Main card */
+.conferences-card {
+  margin-top: 18px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.conferences-card-header {
+  min-height: 64px;
+  padding: 14px 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.conferences-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.conferences-title h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.conference-count {
+  padding: 3px 7px;
+  border-radius: 20px;
+  background-color: var(--teal-bg);
+  color: var(--teal-dark);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* Search and action button */
+.conferences-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.conference-search {
+  width: 220px;
+  height: 36px;
+  padding: 0 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  background-color: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  color: var(--muted);
+}
+
+.conference-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.conference-search input::placeholder {
+  color: var(--muted);
+}
+
+.primary-button {
+  height: 36px;
+  padding: 0 14px;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  border: none;
+  border-radius: 9px;
+
+  background-color: var(--purple-btn);
+  color: white;
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+/* Table */
+.conferences-table {
+  border-top: 1px solid var(--border);
+}
+
+.conference-table-row {
+  display: grid;
+  grid-template-columns:
+    1.8fr
+    1.45fr
+    1.4fr
+    0.9fr
+    0.8fr
+    0.75fr
+    1fr;
+
+  align-items: center;
+  gap: 14px;
+
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+
+  color: var(--text2);
+  font-size: 10px;
+}
+
+.conference-table-row:last-child {
+  border-bottom: none;
+}
+
+.table-head {
+  padding-top: 10px;
+  padding-bottom: 10px;
+
+  background-color: var(--surface);
+  color: var(--muted);
+
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.conference-table-row strong {
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Registration status */
+.registration-status {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 20px;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.registration-open {
+  background-color: var(--teal-bg);
+  color: var(--teal-dark);
+}
+
+.registration-closed {
+  background-color: var(--lavender-bg);
+  color: var(--muted);
+}
+
+/* Conference status */
+.conference-status {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 20px;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.active-status {
+  background-color: var(--lavender-bg);
+  color: var(--purple-mid);
+}
+
+.archived-status {
+  background-color: var(--surface2);
+  color: var(--muted);
+}
+
+/* Row actions */
+.conference-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.edit-button,
+.archive-button {
+  padding: 5px 9px;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+
+.edit-button {
+  background-color: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+
+.archive-button {
+  background-color: #fff5f5;
+  color: var(--error);
+  border: 1px solid #fbd5d5;
+}
+.tracks-table {
+  border-top: 1px solid var(--border);
+}
+
+.track-table-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1.5fr 2fr 0.6fr 1fr;
+  align-items: center;
+  gap: 14px;
+
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+
+  color: var(--text2);
+  font-size: 10px;
+}
+
+.track-table-row:last-child {
+  border-bottom: none;
+}
+
+.track-table-head {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.track-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.track-name strong {
+  color: var(--text);
+  font-size: 11px;
+}
+
+.track-color {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}

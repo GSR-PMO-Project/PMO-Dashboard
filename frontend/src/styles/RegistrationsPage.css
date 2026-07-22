@@ -1,0 +1,215 @@
+.registrations-page {
+  width: 100%;
+}
+
+/* Tabs */
+.registrations-tabs {
+  display: flex;
+  gap: 28px;
+  margin-top: 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.registrations-tab {
+  padding: 10px 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.registrations-tab.active {
+  color: var(--purple-mid);
+  border-bottom-color: var(--purple-mid);
+}
+
+/* Main card */
+.registrations-card {
+  margin-top: 18px;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.registrations-card-header {
+  min-height: 64px;
+  padding: 14px 18px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.registrations-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.registrations-title h3,
+.registrations-card-header h3 {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.registrations-count {
+  padding: 3px 7px;
+  border-radius: 20px;
+
+  background-color: var(--teal-bg);
+  color: var(--teal-dark);
+
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* Search and Export */
+.registrations-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.registrations-search {
+  width: 220px;
+  height: 36px;
+  padding: 0 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  background-color: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  color: var(--muted);
+}
+
+.registrations-search input {
+  width: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+
+  font-family: inherit;
+  font-size: 11px;
+  color: var(--text);
+}
+
+.registrations-search input::placeholder {
+  color: var(--muted);
+}
+
+.export-button {
+  height: 36px;
+  padding: 0 14px;
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  background-color: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Table */
+.registrations-table {
+  border-top: 1px solid var(--border);
+}
+
+.registration-table-row {
+  display: grid;
+  grid-template-columns: 1.6fr 0.95fr 1fr 1.25fr 0.85fr;
+  align-items: center;
+  gap: 16px;
+
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+
+  color: var(--text2);
+  font-size: 10px;
+}
+
+.registration-table-row:last-child {
+  border-bottom: none;
+}
+
+.registration-table-head {
+  padding-top: 10px;
+  padding-bottom: 10px;
+
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Attendee */
+.attendee-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.attendee-info strong {
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.attendee-info span {
+  color: var(--muted);
+  font-size: 9px;
+}
+
+/* Check-in status */
+.checkin-status {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: 20px;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.checked-in {
+  background-color: var(--teal-bg);
+  color: var(--teal-dark);
+}
+
+.not-checked-in {
+  background-color: var(--lavender-bg);
+  color: var(--muted);
+}
+
+/* QR button */
+.view-qr-button {
+  width: fit-content;
+  padding: 5px 10px;
+
+  background-color: var(--surface2);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
