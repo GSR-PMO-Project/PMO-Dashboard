@@ -1,0 +1,141 @@
+.track-form-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.track-form-modal {
+  width: 100%;
+  max-width: 520px;
+  padding: 24px;
+
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+}
+
+.track-form-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 24px;
+}
+
+.track-form-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+}
+
+.track-form-header p {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.track-form-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 6px;
+
+  border: none;
+  background: transparent;
+  color: var(--muted);
+
+  cursor: pointer;
+}
+
+.track-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  margin-bottom: 16px;
+}
+
+.track-form-field label {
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.track-form-field input,
+.track-form-field textarea {
+  width: 100%;
+  padding: 10px 12px;
+
+  box-sizing: border-box;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: var(--surface);
+  color: var(--text);
+
+  font-family: inherit;
+  font-size: 11px;
+
+  outline: none;
+}
+
+.track-form-field textarea {
+  resize: vertical;
+}
+
+.track-form-field input:focus,
+.track-form-field textarea:focus {
+  border-color: var(--purple-mid);
+}
+
+.track-form-field > span {
+  color: #dc2626;
+  font-size: 9px;
+}
+
+.track-form-field input[type="color"] {
+  width: 70px;
+  height: 42px;
+  padding: 4px;
+  cursor: pointer;
+}
+
+.track-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  margin-top: 24px;
+  padding-top: 18px;
+
+  border-top: 1px solid var(--border);
+}
+
+.track-form-cancel {
+  height: 38px;
+  padding: 0 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: var(--surface);
+  color: var(--text2);
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
+}

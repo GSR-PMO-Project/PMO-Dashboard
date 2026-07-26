@@ -7,11 +7,24 @@ import {
 
 import StatCard from "../components/UI/StatCard";
 import ConferenceHealth from "../components/UI/ConferenceHealth";
-import "../styles/OverviewPage.css";
 import CheckinActivity from "../components/UI/CheckinActivity";
 import RecentActivity from "../components/UI/RecentActivity";
 
+import { useOverviewData } from "../hooks/useOverviewData";
+import "../styles/OverviewPage.css";
+
 function OverviewPage() {
+  const token = null;
+  const { data, loading, error } = useOverviewData(token);
+
+  if (loading) {
+    return <p>Loading overview...</p>;
+  }
+
+  if (error) {
+    return <p>{error}</p>;
+  }
+
   return (
     <div className="overview-page">
       <div className="stats-grid">
@@ -50,9 +63,9 @@ function OverviewPage() {
 
       <div className="overview-main-grid">
         <CheckinActivity />
-
         <ConferenceHealth />
       </div>
+
       <RecentActivity />
     </div>
   );
