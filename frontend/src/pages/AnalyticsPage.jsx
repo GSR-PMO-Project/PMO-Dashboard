@@ -1,43 +1,7 @@
-import { useState } from "react";
+import { useState , useEffect} from "react";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
-// import { api } from "../lib/api"; // TODO: uncomment when connecting to real backend
-
+import { api } from "../lib/api";
 import "../styles/AnalyticsPage.css";
-
-const registrationData = [
-  { time: "08h", value: 12 },
-  { time: "09h", value: 22 },
-  { time: "10h", value: 48 },
-  { time: "11h", value: 38 },
-  { time: "12h", value: 55 },
-  { time: "13h", value: 44 },
-  { time: "14h", value: 62 },
-  { time: "15h", value: 50 },
-  { time: "16h", value: 30 },
-];
-// TODO(API): replace registrationData with GET /views/registration-volume?range=...
-
-const kpis = [
-  { label: "Avg. Session Rating", value: "4.3 / 5", variant: "success" },
-  { label: "Avg. Conference Rating", value: "4.7 / 5", variant: "success" },
-  { label: "Check-in Rate", value: "68%", variant: "purple" },
-  { label: "Waitlist Promotions", value: "12", variant: "purple" },
-  { label: "VIP Redemption Rate", value: "50%", variant: "warn" },
-];
-// TODO(API): replace kpis with real aggregates from
-// session_feedback_summary / conference_feedback_summary / checkin_logs
-
-const sessionFeedback = [
-  { session: "Keynote: Future of AI", speakerRating: 5, efficiencyRating: 4, overall: 4.5, comments: "Great opener" },
-  { session: "Hands-on ML Workshop", speakerRating: 4, efficiencyRating: 4, overall: 4.0, comments: "Loved the pace" },
-];
-// TODO(API): replace with GET /views/session-feedback-summary
-
-const conferenceFeedback = [
-  { conference: "GSR Conference 2026", rating: 5, comments: "Best one yet" },
-  { conference: "GSR Regional Meetup — Riyadh", rating: 4, comments: "Good venue" },
-];
-// TODO(API): replace with GET /views/conference-feedback-summary
 
 const ranges = ["Last 24h", "Day 1", "Day 2", "Day 3"];
 const tabs = [
@@ -46,13 +10,146 @@ const tabs = [
   { key: "conferenceFeedback", label: "Conference Feedback" },
 ];
 
+function groupRegistrationsByHour(registrations) {
+  const counts = {};
+  registrations.forEach((r) => {
+    const hour = new Date(r.created_at).getHours();
+    const label = `${String(hour).padStart(2, "0")}h`;
+    counts[label] = (counts[label] || 0) + 1;
+  });
+
+  return Object.entries(counts)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([time, value]) => ({ time, value }));
+}
+
+
+function filterRegistrationsByRange(registrations, range, activeConference) {
+  if (range === "Last 24h") {
+    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+    return registrations.filter(
+      (r) => new Date(r.created_at).getTime() >= cutoff
+    );
+  }
+
+  if (!activeConference) return registrations;
+
+  const dayOffset = { "Day 1": 0, "Day 2": 1, "Day 3": 2 }[range] ?? 0;
+  const start = new Date(activeConference.start_date);
+  start.setDate(start.getDate() + dayOffset);
+  const targetDay = start.toISOString().slice(0, 10);
+
+  return registrations.filter(
+    (r) => r.created_at?.slice(0, 10) === targetDay
+  );
+}
+
+function average(nums) {
+  if (!nums.length) return 0;
+  return nums.reduce((a, b) => a + b, 0) / nums.length;
+}
+function exportToCSV(rows, filename) {
+  if (!rows.length) return;
+
+  const headers = Object.keys(rows[0]);
+  const csvLines = [
+    headers.join(","),
+    ...rows.map((row) =>
+      headers
+        .map((h) => `"${String(row[h] ?? "").replace(/"/g, '""')}"`)
+        .join(",")
+    ),
+  ];
+
+  const blob = new Blob([csvLines.join("\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
 function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [activeRange, setActiveRange] = useState("Last 24h");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const [registrationData, setRegistrationData] = useState([]);
+  const [kpis, setKpis] = useState([]);
+  const [sessionFeedback, setSessionFeedback] = useState([]);
+  const [conferenceFeedback, setConferenceFeedback] = useState([]);
+  const [conferenceNameById, setConferenceNameById] = useState({});
+  const [rawRegistrations, setRawRegistrations] = useState([]);
+  const [conferencesList, setConferencesList] = useState([]);
+
+  useEffect(() => {
+    setLoading(true);
+    setError("");
+
+    Promise.all([
+      api.get("/registrations"),
+      api.get("/vip-invitations"),
+      api.get("/views/session-feedback-summary"),
+      api.get("/views/conference-feedback-summary"),
+      api.get("/conferences"),
+    ])
+    .then(([registrations, vipInvitations, sessionFb, conferenceFb, conferences])  => {
+        setConferenceNameById(
+          Object.fromEntries(conferences.map((c) => [c.id, c.name]))
+        );
+    setRawRegistrations(registrations);
+
+
+
+        const checkedIn = registrations.filter((r) => r.checked_in).length;
+        const checkinRate = registrations.length
+          ? Math.round((checkedIn / registrations.length) * 100)
+          : 0;
+
+        const redeemed = vipInvitations.filter((v) => v.is_used).length;
+        const vipRate = vipInvitations.length
+          ? Math.round((redeemed / vipInvitations.length) * 100)
+          : 0;
+
+        const avgSessionRating = average(
+          sessionFb.map((s) => s.overall_rating).filter((n) => n != null)
+        );
+        const avgConferenceRating = average(
+          conferenceFb.map((c) => c.overall_rating).filter((n) => n != null)
+        );
+
+        setKpis([
+          { label: "Avg. Session Rating", value: `${avgSessionRating.toFixed(1)} / 5`, variant: "success" },
+          { label: "Avg. Conference Rating", value: `${avgConferenceRating.toFixed(1)} / 5`, variant: "success" },
+          { label: "Check-in Rate", value: `${checkinRate}%`, variant: "purple" },
+          { label: "Waitlist Promotions", value: "—", variant: "purple" },
+          { label: "VIP Redemption Rate", value: `${vipRate}%`, variant: "warn" },
+        ]);
+
+        setSessionFeedback(sessionFb);
+        setConferenceFeedback(conferenceFb);
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    if (rawRegistrations.length === 0) return;
+
+    const activeConference = conferencesList.find((c) => c.is_active) || conferencesList[0];
+    const filtered = filterRegistrationsByRange(
+      rawRegistrations,
+      activeRange,
+      activeConference
+    );
+
+    setRegistrationData(groupRegistrationsByHour(filtered));
+  }, [rawRegistrations, activeRange, conferencesList]);
 
   const handleExportCSV = () => {
-    // TODO(API): trigger real CSV export/download
-    alert("CSV export coming soon");
+    exportToCSV(registrationData, "registration-volume.csv");
   };
 
   const handleExportPDF = () => {
@@ -73,8 +170,10 @@ function AnalyticsPage() {
           </button>
         ))}
       </div>
+      {loading && <p className="muted-text">Loading analytics...</p>}
+      {!loading && error && <p className="error-text">{error}</p>}
 
-      {activeTab === "overview" && (
+      {!loading && !error && activeTab === "overview" && (
         <>
           <div className="analytics-toolbar">
             <div className="range-pills">
@@ -109,15 +208,19 @@ function AnalyticsPage() {
                 <span className="live-pill">● LIVE</span>
               </div>
 
-              <div className="registration-chart">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={registrationData}>
+              {registrationData.length === 0 ? (
+                <p className="muted-text">No registrations yet.</p>
+              ) : (
+                <div className="registration-chart">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={registrationData}>
                     <XAxis dataKey="time" axisLine={false} tickLine={false} />
                     <Tooltip />
                     <Bar dataKey="value" fill="#7C3AED" radius={[8, 8, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
+              )}
             </div>
 
             <div className="card kpi-card">
@@ -135,9 +238,12 @@ function AnalyticsPage() {
         </>
       )}
 
-      {activeTab === "sessionFeedback" && (
+      {!loading && !error && activeTab === "sessionFeedback" && (
         <div className="card">
           <h3>Session Feedback</h3>
+          {sessionFeedback.length === 0 ? (
+            <p className="muted-text">No session feedback yet.</p>
+          ) : (
           <table className="feedback-table">
             <thead>
               <tr>
@@ -150,20 +256,21 @@ function AnalyticsPage() {
             </thead>
             <tbody>
               {sessionFeedback.map((f) => (
-                <tr key={f.session}>
-                  <td>{f.session}</td>
-                  <td>{"★".repeat(f.speakerRating)}</td>
-                  <td>{"★".repeat(f.efficiencyRating)}</td>
-                  <td>{f.overall}</td>
-                  <td className="muted-text">{f.comments}</td>
+                <tr key={f.session_id}>
+                  <td>{f.session_id}</td>
+                  <td>{"★".repeat(f.speaker_communication_rating || 0)}</td>
+                  <td>{"★".repeat(f.session_efficiency_rating || 0)}</td>
+                  <td>{f.overall_rating}</td>
+                  <td className="muted-text">{f.additional_comments || "—"}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          )}
         </div>
       )}
 
-      {activeTab === "conferenceFeedback" && (
+      {!loading && !error && activeTab === "conferenceFeedback" && (
         <div className="card">
           <h3>Conference Feedback</h3>
           <table className="feedback-table">
@@ -171,15 +278,17 @@ function AnalyticsPage() {
               <tr>
                 <th>Conference</th>
                 <th>Rating</th>
+                <th>Feedback Count</th>
                 <th>Comments</th>
               </tr>
             </thead>
             <tbody>
               {conferenceFeedback.map((f) => (
-                <tr key={f.conference}>
-                  <td>{f.conference}</td>
-                  <td>{"★".repeat(f.rating)}</td>
-                  <td className="muted-text">{f.comments}</td>
+                <tr key={f.conference_id}>
+                  <td>{conferenceNameById[f.conference_id] || f.conference_id}</td>
+                  <td>{"★".repeat(Math.round(f.avg_overall_rating) || 0)}</td>
+                  <td>{f.feedback_count}</td>
+                  <td className="muted-text">—</td>
                 </tr>
               ))}
             </tbody>
