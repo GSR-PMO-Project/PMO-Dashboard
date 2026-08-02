@@ -6,8 +6,8 @@ import LoadingSpinner from "../components/shared/LoadingSpinner";
 import "../styles/CommunicationsPage.css";
 import Tabs from "../components/shared/Tabs";
 import Table from "../components/shared/Table";
-import Toast from "../components/shared/Toast";
-import ConfirmDialog from "../components/shared/ConfirmDialog";
+import Toast from "../components/UI/Toast";
+import ConfirmDialog from "../components/UI/ConfirmDialog";
 import { withRetry } from "../lib/retry";
 
 const tabs = [
@@ -365,14 +365,15 @@ function CommunicationsPage() {
         />
       )}
 
-      <ConfirmDialog
-        isOpen={confirmDeleteId !== null}
-        title="Delete announcement"
-        message="Are you sure you want to delete this announcement? This cannot be undone."
-        confirmLabel="Delete"
-        onConfirm={confirmDelete}
-        onCancel={() => setConfirmDeleteId(null)}
-      />
+      {confirmDeleteId !== null && (
+        <ConfirmDialog
+          title="Delete announcement"
+          message="Are you sure you want to delete this announcement? This cannot be undone."
+          confirmText="Delete"
+          onConfirm={confirmDelete}
+          onCancel={() => setConfirmDeleteId(null)}
+        />
+      )}
     </div>
   );
 }

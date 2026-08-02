@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Zap, ExternalLink } from "lucide-react";
 import "../styles/SettingsPage.css";
-import Toast from "../components/shared/Toast";
+import Toast from "../components/UI/Toast";
 
 const generalFields = [
   { label: "App Name", value: "GSR Conference App" },
