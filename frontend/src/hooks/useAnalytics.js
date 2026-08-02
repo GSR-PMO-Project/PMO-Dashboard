@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { api } from "../lib/api";
+import { apiFetch } from "../lib/api";
 import { withRetry } from "../lib/retry";
 
 function average(nums) {
@@ -49,7 +49,7 @@ function filterRegistrationsByRange(registrations, range, activeConference) {
   );
 }
 
-export function useAnalytics(activeRange = "Last 24h") {
+export function useAnalytics(token, activeRange = "Last 24h") {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -76,11 +76,11 @@ export function useAnalytics(activeRange = "Last 24h") {
           conferenceFb,
         ] = await withRetry(() =>
           Promise.all([
-            api.get("/registrations"),
-            api.get("/vip-invitations"),
-            api.get("/conferences"),
-            api.get("/views/session-feedback-summary"),
-            api.get("/views/conference-feedback-summary"),
+            apiFetch("/api/registrations", {}, token),
+            apiFetch("/api/vip-invitations", {}, token),
+            apiFetch("/api/conferences", {}, token),
+            apiFetch("/api/views/session-feedback-summary", {}, token),
+            apiFetch("/api/views/conference-feedback-summary", {}, token),
           ])
         );
 
@@ -158,8 +158,9 @@ export function useAnalytics(activeRange = "Last 24h") {
       }
     }
 
-    loadAnalytics();
-  }, []);
+   if (!token) return;
+       loadAnalytics();
+     }, [token]);
 
   useEffect(() => {
     const activeConference =

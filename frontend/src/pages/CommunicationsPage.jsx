@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Pin } from "lucide-react";
-import { api } from "../lib/api";
+import { apiFetch } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
 import LoadingSpinner from "../components/shared/LoadingSpinner";
 import "../styles/CommunicationsPage.css";
@@ -60,7 +60,7 @@ function CommunicationsPage() {
     const id = confirmDeleteId;
     setConfirmDeleteId(null);
     try {
-      await api.delete(`/announcements/${id}`);
+      await apiFetch(`/api/announcements/${id}`, { method: "DELETE" }, session?.access_token);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
       if (editingId === id) resetForm();
       showToast("Announcement deleted");
@@ -79,11 +79,12 @@ function CommunicationsPage() {
       setError("");
 
       try {
+        const token = session?.access_token;
         const [conferences, announcementsData, notificationsData] = await withRetry(() =>
           Promise.all([
-            api.get("/conferences"),
-            api.get("/announcements"),
-            api.get("/notifications"),
+            apiFetch("/api/conferences", {}, token),
+            apiFetch("/api/announcements", {}, token),
+            apiFetch("/api/notifications", {}, token),
           ])
         );
 
@@ -124,7 +125,9 @@ function CommunicationsPage() {
         };
         if (publish) payload.published_at = new Date().toISOString();
 
-        const updated = await api.patch(`/announcements/${editingId}`, payload);
+        const updated = await apiFetch(`/api/announcements/${editingId}`, { method: "PATCH", body: JSON.stringify(payload) }, session?.access_token);
+
+
         setAnnouncements((prev) =>
           prev.map((a) => (a.id === editingId ? updated : a))
         );
@@ -140,7 +143,7 @@ function CommunicationsPage() {
           published_at: publish ? new Date().toISOString() : null,
         };
 
-        const created = await api.post("/announcements", payload);
+        const created = await apiFetch("/api/announcements", { method: "POST", body: JSON.stringify(payload) }, session?.access_token);
         setAnnouncements((prev) => [created, ...prev]);
         showToast(publish ? "Announcement published" : "Draft saved");
       }

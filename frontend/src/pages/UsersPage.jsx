@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { api } from "../lib/api";
+import { apiFetch } from "../lib/api";
+import { useAuth } from "../hooks/useAuth";
 import { Search } from "lucide-react";
 import Modal from "../components/shared/Modal";
 import FormField from "../components/shared/FormField";
@@ -53,6 +54,7 @@ function getInitials(name = "") {
 }
 
 function UsersPage() {
+  const { session } = useAuth();
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
   const [users, setUsers] = useState([]);
@@ -63,14 +65,15 @@ function UsersPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!session) return;
     fetchUsers();
-  }, []);
+  }, [session]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
 
-      const data = await api.get("/profiles");
+      const data = await apiFetch("/api/profiles", {}, session?.access_token);
       setUsers(data);
     } catch (err) {
       console.error("Failed to fetch users:", err);
@@ -81,9 +84,7 @@ function UsersPage() {
 
   const handleRoleChange = async (id, newRole) => {
     try {
-      await api.patch(`/profiles/${id}`, {
-        role: newRole,
-      });
+      await apiFetch(`/api/profiles/${id}`, { method: "PATCH", body: JSON.stringify({ role: newRole }) }, session?.access_token);
 
       setUsers((prev) =>
         prev.map((u) =>
@@ -121,7 +122,7 @@ function UsersPage() {
 
       setSaving(true);
       try {
-        const newUser = await api.post("/profiles", form);
+        const newUser = await apiFetch("/api/profiles", { method: "POST", body: JSON.stringify(form) }, session?.access_token);
         setUsers((prev) => [...prev, newUser]);
         setShowAddModal(false);
       } catch (err) {
