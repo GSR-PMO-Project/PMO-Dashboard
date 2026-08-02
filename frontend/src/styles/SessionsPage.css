@@ -123,7 +123,7 @@
     1.15fr
     1.2fr
     0.65fr
-    1fr;
+    1.35fr;
 
   align-items: center;
   gap: 12px;
@@ -214,15 +214,22 @@
   color: #92400e;
 }
 
+.cancelled-status {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
 /* Actions */
 .session-actions {
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .session-edit-button,
-.session-cancel-button {
+.session-cancel-button,
+.session-delete-button {
   padding: 5px 9px;
   border-radius: 8px;
 
@@ -231,6 +238,7 @@
   font-weight: 600;
 
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .session-edit-button {
@@ -239,8 +247,71 @@
   border: 1px solid var(--border);
 }
 
+.session-edit-button:hover {
+  background-color: var(--lavender-bg);
+  color: var(--purple-mid);
+}
+
 .session-cancel-button {
+  background-color: #fffbeb;
+  color: #d97706;
+  border: 1px solid #fcd34d;
+}
+
+.session-cancel-button:hover {
+  background-color: #fef3c7;
+}
+
+.session-delete-button {
   background-color: #fff5f5;
-  color: var(--error);
-  border: 1px solid #fbd5d5;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.session-delete-button:hover {
+  background-color: #fee2e2;
+}
+
+/* Empty state */
+.sessions-empty-state {
+  padding: 28px 18px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .sessions-table {
+    overflow-x: auto;
+  }
+
+  .session-table-row {
+    min-width: 980px;
+  }
+}
+
+@media (max-width: 700px) {
+  .sessions-card-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .sessions-toolbar-actions {
+    width: 100%;
+  }
+
+  .sessions-search {
+    flex: 1;
+    width: auto;
+  }
+
+  .session-day-tabs {
+    overflow-x: auto;
+  }
+
+  .session-day-tab {
+    white-space: nowrap;
+  }
 }

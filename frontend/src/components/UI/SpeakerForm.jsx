@@ -13,11 +13,11 @@ function SpeakerForm({
     title: initialData?.title || "",
     company: initialData?.company || "",
     bio: initialData?.bio || "",
-    imageUrl: initialData?.imageUrl || "",
+    image_url: initialData?.image_url || "",
     email: initialData?.email || "",
-    socialLink: initialData?.socialLink || "",
-    featured: initialData?.featured || false,
-    sortOrder: initialData?.sortOrder || "",
+    linkedin_url: initialData?.linkedin_url || "",
+    is_featured: initialData?.is_featured || false,
+    sort_order: initialData?.sort_order ?? "",
   });
 
   const [errors, setErrors] = useState({});
@@ -31,7 +31,7 @@ function SpeakerForm({
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const newErrors = {};
@@ -56,18 +56,27 @@ function SpeakerForm({
     }
 
     if (
-      formData.sortOrder &&
-      Number(formData.sortOrder) < 0
+      formData.sort_order !== "" &&
+      Number(formData.sort_order) < 0
     ) {
-      newErrors.sortOrder =
+      newErrors.sort_order =
         "Sort order cannot be negative.";
     }
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      onSubmit?.(formData);
-      onClose();
+      const success = await onSubmit?.({
+        ...formData,
+        sort_order:
+          formData.sort_order === ""
+            ? 0
+            : Number(formData.sort_order),
+      });
+
+      if (success !== false) {
+        onClose();
+      }
     }
   }
 
@@ -176,20 +185,20 @@ function SpeakerForm({
 
             <input
               type="url"
-              name="imageUrl"
-              value={formData.imageUrl}
+              name="image_url"
+              value={formData.image_url}
               onChange={handleChange}
               placeholder="https://..."
             />
           </div>
 
           <div className="speaker-form-field">
-            <label>Social Link</label>
+            <label>LinkedIn URL</label>
 
             <input
               type="url"
-              name="socialLink"
-              value={formData.socialLink}
+              name="linkedin_url"
+              value={formData.linkedin_url}
               onChange={handleChange}
               placeholder="https://linkedin.com/in/..."
             />
@@ -199,8 +208,8 @@ function SpeakerForm({
             <label className="speaker-featured-field">
               <input
                 type="checkbox"
-                name="featured"
-                checked={formData.featured}
+                name="is_featured"
+                checked={formData.is_featured}
                 onChange={handleChange}
               />
 
@@ -212,15 +221,15 @@ function SpeakerForm({
 
               <input
                 type="number"
-                name="sortOrder"
-                value={formData.sortOrder}
+                name="sort_order"
+                value={formData.sort_order}
                 onChange={handleChange}
                 placeholder="0"
                 min="0"
               />
 
-              {errors.sortOrder && (
-                <span>{errors.sortOrder}</span>
+              {errors.sort_order && (
+                <span>{errors.sort_order}</span>
               )}
             </div>
           </div>

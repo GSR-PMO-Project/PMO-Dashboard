@@ -1,5 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Download } from "lucide-react";
+
+import { supabase } from "../lib/supabaseClient";
+import { apiFetch } from "../lib/api";
 
 import VIPInviteForm from "../components/UI/VIPInviteForm";
 import ConfirmDialog from "../components/UI/ConfirmDialog";
@@ -8,98 +11,18 @@ import QRViewerModal from "../components/UI/QRViewerModal";
 
 import "../styles/RegistrationsPage.css";
 
-const attendees = [
-  {
-    name: "Ahmad Al-Faraj",
-    email: "ahmad.f@example.com",
-    code: "GSR-88213",
-    checkedIn: true,
-    checkInTime: "Oct 26, 11:41 AM",
-  },
-  {
-    name: "Lama Al-Otaibi",
-    email: "lama.o@example.com",
-    code: "GSR-88214",
-    checkedIn: true,
-    checkInTime: "Oct 26, 11:52 AM",
-  },
-  {
-    name: "Yazan Khoury",
-    email: "yazan.k@example.com",
-    code: "GSR-88215",
-    checkedIn: false,
-    checkInTime: "—",
-  },
-  {
-    name: "Reem Al-Shammari",
-    email: "reem.s@example.com",
-    code: "GSR-88216",
-    checkedIn: true,
-    checkInTime: "Oct 26, 12:03 PM",
-  },
-  {
-    name: "Hassan Al-Balawi",
-    email: "hassan.b@example.com",
-    code: "GSR-88217",
-    checkedIn: false,
-    checkInTime: "—",
-  },
-];
 
-const vipInvitations = [
-  {
-    name: "Dr. Khalid Al-Harbi",
-    email: "khalid.h@example.com",
-    expiry: "Oct 25, 2026",
-    status: "Active",
-  },
-  {
-    name: "Sarah Mitchell",
-    email: "sarah.m@example.com",
-    expiry: "Oct 25, 2026",
-    status: "Active",
-  },
-  {
-    name: "Omar Al-Qahtani",
-    email: "omar.q@example.com",
-    expiry: "Oct 24, 2026",
-    status: "Revoked",
-  },
-];
-
-const checkInLogs = [
-  {
-    id: 1,
-    name: "Ahmad Al-Faraj",
-    code: "GSR-88213",
-    date: "Oct 26, 2026",
-    time: "11:41 AM",
-    location: "Main Entrance",
-    method: "QR Code",
-  },
-  {
-    id: 2,
-    name: "Lama Al-Otaibi",
-    code: "GSR-88214",
-    date: "Oct 26, 2026",
-    time: "11:52 AM",
-    location: "Main Entrance",
-    method: "QR Code",
-  },
-  {
-    id: 3,
-    name: "Reem Al-Shammari",
-    code: "GSR-88216",
-    date: "Oct 26, 2026",
-    time: "12:03 PM",
-    location: "VIP Entrance",
-    method: "Manual",
-  },
-];
 
 function RegistrationsPage() {
   const [activeTab, setActiveTab] = useState("registrations");
+  const [attendees, setAttendees] = useState([]);
+  const [registrationsLoading, setRegistrationsLoading] = useState(true);
 
+  const [vipInvitations, setVipInvitations] = useState([]);
+  const [vipLoading, setVipLoading] = useState(true);
+  const [checkInLogs, setCheckInLogs] = useState([]);
+
+  const [checkInLoading, setCheckInLoading] = useState(true);
   const [attendeeSearch, setAttendeeSearch] = useState("");
   const [checkInSearch, setCheckInSearch] = useState("");
 
@@ -107,6 +30,212 @@ function RegistrationsPage() {
   const [vipToRevoke, setVipToRevoke] = useState(null);
   const [selectedAttendee, setSelectedAttendee] = useState(null);
   const [toast, setToast] = useState(null);
+
+    useEffect(() => {
+  let isMounted = true;
+
+  async function loadRegistrations() {
+    try {
+      setRegistrationsLoading(true);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error("No active session was found.");
+      }
+
+      const [registrations, profiles] = await Promise.all([
+        apiFetch("/api/registrations", {}, token),
+        apiFetch("/api/profiles", {}, token),
+      ]);
+
+      const profilesById = new Map(
+        profiles.map((profile) => [profile.id, profile])
+      );
+
+      const formattedAttendees = registrations.map((registration) => {
+        const profile = profilesById.get(registration.user_id);
+
+        return {
+          id: registration.id,
+          userId: registration.user_id,
+          conferenceId: registration.conference_id,
+          name: profile?.full_name?.trim() || "Unnamed attendee",
+          email: profile?.email || "No email",
+          code: registration.registration_code || "—",
+          checkedIn: Boolean(registration.checked_in),
+          checkInTime: registration.checked_in_at
+            ? new Date(registration.checked_in_at).toLocaleString()
+            : "—",
+          qrData: registration.qr_code_data,
+        };
+      });
+
+      if (isMounted) {
+        setAttendees(formattedAttendees);
+      }
+    } catch (error) {
+      console.error("Failed to load registrations:", error);
+
+      if (isMounted) {
+        setAttendees([]);
+        setToast({
+          message: "Unable to load registrations.",
+          type: "error",
+        });
+      }
+    } finally {
+      if (isMounted) {
+        setRegistrationsLoading(false);
+      }
+    }
+  }
+
+  loadRegistrations();
+
+  return () => {
+    isMounted = false;
+  };
+}, []);
+
+useEffect(() => {
+  let isMounted = true;
+
+  async function loadVIPInvitations() {
+    try {
+      setVipLoading(true);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error("No active session was found.");
+      }
+
+      const invitations = await apiFetch(
+        "/api/vip-invitations",
+        {},
+        token
+      );
+
+      const formattedInvitations = invitations.map((invitation) => ({
+        id: invitation.id,
+        name: invitation.invitee_name || "Unnamed invitee",
+        email: invitation.email || "No email",
+        expiry: invitation.expires_at
+          ? new Date(invitation.expires_at).toLocaleDateString()
+          : "—",
+        status: invitation.is_used ? "Used" : "Active",
+        invitationCode: invitation.invitation_code,
+        usedAt: invitation.used_at,
+        usedBy: invitation.used_by,
+        conferenceId: invitation.conference_id,
+      }));
+
+      if (isMounted) {
+        setVipInvitations(formattedInvitations);
+      }
+    } catch (error) {
+      console.error("Failed to load VIP invitations:", error);
+
+      if (isMounted) {
+        setVipInvitations([]);
+        setToast({
+          message: "Unable to load VIP invitations.",
+          type: "error",
+        });
+      }
+    } finally {
+      if (isMounted) {
+        setVipLoading(false);
+      }
+    }
+  }
+
+  loadVIPInvitations();
+
+  return () => {
+    isMounted = false;
+  };
+}, []);
+useEffect(() => {
+  let isMounted = true;
+
+  async function loadCheckInLogs() {
+    try {
+      setCheckInLoading(true);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const token = session?.access_token;
+
+      if (!token) {
+        throw new Error("No active session was found.");
+      }
+
+      const logs = await apiFetch(
+        "/api/checkin-logs",
+        {},
+        token
+      );
+
+      const formattedLogs = logs.map((log) => ({
+        id: log.id,
+        name:
+          log.attendee_name ||
+          log.full_name ||
+          log.name ||
+          "Unnamed attendee",
+        code:
+          log.registration_code ||
+          log.code ||
+          "—",
+        date: log.checked_in_at
+          ? new Date(log.checked_in_at).toLocaleDateString()
+          : "—",
+        time: log.checked_in_at
+          ? new Date(log.checked_in_at).toLocaleTimeString()
+          : "—",
+        location: log.location || "—",
+        method: log.method || "—",
+      }));
+
+      if (isMounted) {
+        setCheckInLogs(formattedLogs);
+      }
+    } catch (error) {
+      console.error("Failed to load check-in logs:", error);
+
+      if (isMounted) {
+        setCheckInLogs([]);
+        setToast({
+          message: "Unable to load check-in logs.",
+          type: "error",
+        });
+      }
+    } finally {
+      if (isMounted) {
+        setCheckInLoading(false);
+      }
+    }
+  }
+
+  loadCheckInLogs();
+
+  return () => {
+    isMounted = false;
+  };
+}, []);
+
 
   const filteredAttendees = attendees.filter((attendee) => {
     const searchValue = attendeeSearch.toLowerCase();
@@ -140,25 +269,203 @@ function RegistrationsPage() {
     }, 3000);
   }
 
-  function handleVIPSubmit(formData) {
-    console.log("New VIP Invitation:", formData);
+  async function handleVIPSubmit(formData) {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    showSuccessToast("VIP invitation sent successfully.");
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error("No active session was found.");
+    }
+
+    const conferenceId =
+      attendees[0]?.conferenceId ||
+      vipInvitations[0]?.conferenceId;
+
+    if (!conferenceId) {
+      throw new Error(
+        "Conference ID could not be determined."
+      );
+    }
+
+    const invitationCode = crypto
+      .randomUUID()
+      .replaceAll("-", "")
+      .slice(0, 10)
+      .toUpperCase();
+
+    const createdInvitation = await apiFetch(
+      "/api/vip-invitations",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          conference_id: conferenceId,
+          email: formData.email.trim(),
+          invitation_code: invitationCode,
+          invitee_name: formData.name.trim(),
+          expires_at: formData.expiryDate.toISOString(),
+        }),
+      },
+      token
+    );
+
+    const formattedInvitation = {
+      id: createdInvitation.id,
+      name:
+        createdInvitation.invitee_name ||
+        "Unnamed invitee",
+      email:
+        createdInvitation.email ||
+        "No email",
+      expiry: createdInvitation.expires_at
+        ? new Date(
+            createdInvitation.expires_at
+          ).toLocaleDateString()
+        : "—",
+      status: createdInvitation.is_used
+        ? "Used"
+        : "Active",
+      invitationCode:
+        createdInvitation.invitation_code,
+      usedAt: createdInvitation.used_at,
+      usedBy: createdInvitation.used_by,
+      conferenceId:
+        createdInvitation.conference_id,
+    };
+
+    setVipInvitations((previous) => [
+      formattedInvitation,
+      ...previous,
+    ]);
+
+    setShowVIPForm(false);
+
+    showSuccessToast(
+      "VIP invitation created successfully."
+    );
+  } catch (error) {
+    console.error(
+      "Failed to create VIP invitation:",
+      error
+    );
+
+    setToast({
+      message:
+        error.message ||
+        "Unable to create VIP invitation.",
+      type: "error",
+    });
   }
+}
 
-  function handleResendInvite(invitee) {
-    console.log("Resend invitation:", invitee);
+async function handleResendInvite(invitee) {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    showSuccessToast("Invitation resent successfully.");
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error("No active session was found.");
+    }
+
+    await apiFetch(
+      `/api/vip-invitations/${invitee.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          expires_at: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+        }),
+      },
+      token
+    );
+
+    const newExpiry = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    );
+
+    setVipInvitations((previous) =>
+      previous.map((invitation) =>
+        invitation.id === invitee.id
+          ? {
+              ...invitation,
+              expiry:
+                newExpiry.toLocaleDateString(),
+            }
+          : invitation
+      )
+    );
+
+    showSuccessToast(
+      "Invitation expiry extended successfully."
+    );
+  } catch (error) {
+    console.error(
+      "Failed to resend invitation:",
+      error
+    );
+
+    setToast({
+      message:
+        "Unable to resend the invitation.",
+      type: "error",
+    });
   }
+}
 
-  function handleRevokeInvite() {
-    console.log("Revoke invitation:", vipToRevoke);
+async function handleRevokeInvite() {
+  if (!vipToRevoke) return;
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error("No active session was found.");
+    }
+
+    await apiFetch(
+      `/api/vip-invitations/${vipToRevoke.id}`,
+      {
+        method: "DELETE",
+      },
+      token
+    );
+
+    setVipInvitations((previous) =>
+      previous.filter(
+        (invitation) =>
+          invitation.id !== vipToRevoke.id
+      )
+    );
 
     setVipToRevoke(null);
 
-    showSuccessToast("Invitation revoked successfully.");
+    showSuccessToast(
+      "Invitation revoked successfully."
+    );
+  } catch (error) {
+    console.error(
+      "Failed to revoke invitation:",
+      error
+    );
+
+    setToast({
+      message:
+        "Unable to revoke the invitation.",
+      type: "error",
+    });
   }
+}
 
   function downloadCSV(filename, rows) {
     if (!rows.length) {
@@ -284,48 +591,48 @@ function RegistrationsPage() {
               <span>ACTIONS</span>
             </div>
 
-            {filteredAttendees.length > 0 ? (
-              filteredAttendees.map((attendee) => (
-                <div
-                  className="registration-table-row"
-                  key={attendee.code}
-                >
-                  <div className="attendee-info">
-                    <strong>{attendee.name}</strong>
-                    <span>{attendee.email}</span>
-                  </div>
+            {registrationsLoading ? (
+  <div className="registrations-empty-state">
+    Loading registrations...
+  </div>
+) : filteredAttendees.length > 0 ? (
+  filteredAttendees.map((attendee) => (
+    <div
+      className="registration-table-row"
+      key={attendee.id}
+    >
+      <div className="attendee-info">
+        <strong>{attendee.name}</strong>
+        <span>{attendee.email}</span>
+      </div>
 
-                  <span>{attendee.code}</span>
+      <span>{attendee.code}</span>
 
-                  <span
-                    className={`checkin-status ${
-                      attendee.checkedIn
-                        ? "checked-in"
-                        : "not-checked-in"
-                    }`}
-                  >
-                    {attendee.checkedIn
-                      ? "Checked In"
-                      : "Not Yet"}
-                  </span>
+      <span
+        className={`checkin-status ${
+          attendee.checkedIn
+            ? "checked-in"
+            : "not-checked-in"
+        }`}
+      >
+        {attendee.checkedIn ? "Checked In" : "Not Yet"}
+      </span>
 
-                  <span>{attendee.checkInTime}</span>
+      <span>{attendee.checkInTime}</span>
 
-                  <button
-                    className="view-qr-button"
-                    onClick={() =>
-                      setSelectedAttendee(attendee)
-                    }
-                  >
-                    View QR
-                  </button>
-                </div>
-              ))
-            ) : (
-              <div className="registrations-empty-state">
-                No attendees found.
-              </div>
-            )}
+      <button
+        className="view-qr-button"
+        onClick={() => setSelectedAttendee(attendee)}
+      >
+        View QR
+      </button>
+    </div>
+  ))
+) : (
+  <div className="registrations-empty-state">
+    No attendees found.
+  </div>
+)}
           </div>
         </div>
       )}
@@ -358,49 +665,55 @@ function RegistrationsPage() {
               <span>ACTIONS</span>
             </div>
 
-            {vipInvitations.map((invitee) => (
-              <div
-                className="registration-table-row"
-                key={invitee.email}
-              >
-                <strong>{invitee.name}</strong>
+            {vipLoading ? (
+  <div className="registrations-empty-state">
+    Loading VIP invitations...
+  </div>
+) : vipInvitations.length > 0 ? (
+  vipInvitations.map((invitee) => (
+    <div
+      className="registration-table-row"
+      key={invitee.id}
+    >
+      <strong>{invitee.name}</strong>
 
-                <span>{invitee.email}</span>
+      <span>{invitee.email}</span>
 
-                <span>{invitee.expiry}</span>
+      <span>{invitee.expiry}</span>
 
-                <span
-                  className={`checkin-status ${
-                    invitee.status === "Active"
-                      ? "checked-in"
-                      : "not-checked-in"
-                  }`}
-                >
-                  {invitee.status}
-                </span>
+      <span
+        className={`checkin-status ${
+          invitee.status === "Active"
+            ? "checked-in"
+            : "not-checked-in"
+        }`}
+      >
+        {invitee.status}
+      </span>
 
-                <div className="vip-actions">
-                  <button
-                    className="view-qr-button"
-                    onClick={() =>
-                      handleResendInvite(invitee)
-                    }
-                  >
-                    Resend
-                  </button>
+      <div className="vip-actions">
+        <button
+          className="view-qr-button"
+          onClick={() => handleResendInvite(invitee)}
+        >
+          Resend
+        </button>
 
-                  <button
-                    className="vip-revoke-button"
-                    onClick={() =>
-                      setVipToRevoke(invitee)
-                    }
-                    disabled={invitee.status === "Revoked"}
-                  >
-                    Revoke
-                  </button>
-                </div>
-              </div>
-            ))}
+        <button
+          className="vip-revoke-button"
+          onClick={() => setVipToRevoke(invitee)}
+          disabled={invitee.status !== "Active"}
+        >
+          Revoke
+        </button>
+      </div>
+    </div>
+  ))
+) : (
+  <div className="registrations-empty-state">
+    No VIP invitations found.
+  </div>
+)}
           </div>
         </div>
       )}
@@ -450,29 +763,33 @@ function RegistrationsPage() {
               <span>METHOD</span>
             </div>
 
-            {filteredCheckInLogs.length > 0 ? (
-              filteredCheckInLogs.map((log) => (
-                <div
-                  className="checkin-log-row"
-                  key={log.id}
-                >
-                  <strong>{log.name}</strong>
-                  <span>{log.code}</span>
-                  <span>{log.date}</span>
-                  <span>{log.time}</span>
-                  <span>{log.location}</span>
+            {checkInLoading ? (
+           <div className="registrations-empty-state">
+             Loading check-in logs...
+           </div>
+          ) : filteredCheckInLogs.length > 0 ? (
+           filteredCheckInLogs.map((log) => (
+          <div
+          className="checkin-log-row"
+          key={log.id}
+          >
+      <strong>{log.name}</strong>
+      <span>{log.code}</span>
+      <span>{log.date}</span>
+      <span>{log.time}</span>
+      <span>{log.location}</span>
 
-                  <span className="checkin-method">
-                    {log.method}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div className="registrations-empty-state">
-                No check-in logs found.
-              </div>
-            )}
-          </div>
+      <span className="checkin-method">
+        {log.method}
+      </span>
+    </div>
+  ))
+) : (
+  <div className="registrations-empty-state">
+    No check-in logs found.
+  </div>
+)}
+ </div>
         </div>
       )}
 

@@ -12,10 +12,14 @@ function ConferenceForm({
 }) {
   const [formData, setFormData] = useState({
     name: initialData?.name || "",
-    startDate: initialData?.startDate || null,
-    endDate: initialData?.endDate || null,
-    venue: initialData?.venue || "",
-    maxAttendees: initialData?.maxAttendees || "",
+    start_date: initialData?.start_date
+      ? new Date(initialData.start_date)
+      : null,
+    end_date: initialData?.end_date
+      ? new Date(initialData.end_date)
+      : null,
+    venue_name: initialData?.venue_name || "",
+    max_attendees: initialData?.max_attendees || "",
   });
 
   const [errors, setErrors] = useState({});
@@ -29,7 +33,7 @@ function ConferenceForm({
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const newErrors = {};
@@ -38,39 +42,53 @@ function ConferenceForm({
       newErrors.name = "Conference name is required.";
     }
 
-    if (!formData.startDate) {
-      newErrors.startDate = "Start date is required.";
+    if (!formData.start_date) {
+      newErrors.start_date = "Start date is required.";
     }
 
-    if (!formData.endDate) {
-      newErrors.endDate = "End date is required.";
-    }
-
-    if (
-      formData.startDate &&
-      formData.endDate &&
-      formData.endDate < formData.startDate
-    ) {
-      newErrors.endDate = "End date cannot be before start date.";
-    }
-
-    if (!formData.venue.trim()) {
-      newErrors.venue = "Venue is required.";
+    if (!formData.end_date) {
+      newErrors.end_date = "End date is required.";
     }
 
     if (
-      !formData.maxAttendees ||
-      Number(formData.maxAttendees) <= 0
+      formData.start_date &&
+      formData.end_date &&
+      formData.end_date < formData.start_date
     ) {
-      newErrors.maxAttendees = "Enter a valid capacity.";
+      newErrors.end_date =
+        "End date cannot be before start date.";
+    }
+
+    if (!formData.venue_name.trim()) {
+      newErrors.venue_name = "Venue is required.";
+    }
+
+    if (
+      !formData.max_attendees ||
+      Number(formData.max_attendees) <= 0
+    ) {
+      newErrors.max_attendees =
+        "Enter a valid capacity.";
     }
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      onSubmit?.(formData);
-      onClose();
-    }
+  const success = await onSubmit?.({
+    ...formData,
+    start_date: formData.start_date
+      .toISOString()
+      .split("T")[0],
+    end_date: formData.end_date
+      .toISOString()
+      .split("T")[0],
+    max_attendees: Number(formData.max_attendees),
+  });
+
+  if (success !== false) {
+    onClose();
+  }
+}
   }
 
   return (
@@ -120,19 +138,19 @@ function ConferenceForm({
               <label>Start Date</label>
 
               <DatePicker
-                selected={formData.startDate}
+                selected={formData.start_date}
                 onChange={(date) =>
                   setFormData((previous) => ({
                     ...previous,
-                    startDate: date,
+                    start_date: date,
                   }))
                 }
                 dateFormat="MMM d, yyyy"
                 placeholderText="Select start date"
               />
 
-              {errors.startDate && (
-                <span>{errors.startDate}</span>
+              {errors.start_date && (
+                <span>{errors.start_date}</span>
               )}
             </div>
 
@@ -140,20 +158,20 @@ function ConferenceForm({
               <label>End Date</label>
 
               <DatePicker
-                selected={formData.endDate}
+                selected={formData.end_date}
                 onChange={(date) =>
                   setFormData((previous) => ({
                     ...previous,
-                    endDate: date,
+                    end_date: date,
                   }))
                 }
-                minDate={formData.startDate}
+                minDate={formData.start_date}
                 dateFormat="MMM d, yyyy"
                 placeholderText="Select end date"
               />
 
-              {errors.endDate && (
-                <span>{errors.endDate}</span>
+              {errors.end_date && (
+                <span>{errors.end_date}</span>
               )}
             </div>
           </div>
@@ -163,13 +181,15 @@ function ConferenceForm({
 
             <input
               type="text"
-              name="venue"
-              value={formData.venue}
+              name="venue_name"
+              value={formData.venue_name}
               onChange={handleChange}
               placeholder="e.g. KFUPM Convention Center"
             />
 
-            {errors.venue && <span>{errors.venue}</span>}
+            {errors.venue_name && (
+              <span>{errors.venue_name}</span>
+            )}
           </div>
 
           <div className="conference-form-field">
@@ -177,15 +197,15 @@ function ConferenceForm({
 
             <input
               type="number"
-              name="maxAttendees"
-              value={formData.maxAttendees}
+              name="max_attendees"
+              value={formData.max_attendees}
               onChange={handleChange}
               placeholder="1500"
               min="1"
             />
 
-            {errors.maxAttendees && (
-              <span>{errors.maxAttendees}</span>
+            {errors.max_attendees && (
+              <span>{errors.max_attendees}</span>
             )}
           </div>
 

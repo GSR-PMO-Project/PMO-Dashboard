@@ -7,7 +7,11 @@ export function useOverviewData(token) {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      return;
+    }
+
+    let isMounted = true;
 
     async function fetchOverviewData() {
       try {
@@ -19,27 +23,54 @@ export function useOverviewData(token) {
           registrations,
           sessions,
           checkinLogs,
+          vipInvitations,
+          notifications,
+          conferenceFeedback,
         ] = await Promise.all([
           apiFetch("/api/conferences", {}, token),
           apiFetch("/api/registrations", {}, token),
           apiFetch("/api/sessions", {}, token),
           apiFetch("/api/checkin-logs", {}, token),
+          apiFetch("/api/vip-invitations", {}, token),
+          apiFetch("/api/notifications", {}, token),
+          apiFetch("/api/feedback/conferences", {}, token),
         ]);
 
-        setData({
-          conferences,
-          registrations,
-          sessions,
-          checkinLogs,
-        });
+        if (isMounted) {
+          setData({
+            conferences,
+            registrations,
+            sessions,
+            checkinLogs,
+            vipInvitations,
+            notifications,
+            conferenceFeedback,
+          });
+        }
       } catch (err) {
-        setError(err.message);
+        console.error(
+          "Failed to load overview data:",
+          err
+        );
+
+        if (isMounted) {
+          setError(
+            err.message ||
+              "Unable to load overview data."
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     fetchOverviewData();
+
+    return () => {
+      isMounted = false;
+    };
   }, [token]);
 
   return { data, loading, error };

@@ -2,10 +2,15 @@ import { useState } from "react";
 import { X } from "lucide-react";
 import "../../styles/TrackForm.css";
 
-function TrackForm({ onClose, onSubmit, initialData = null }) {
+function TrackForm({
+  onClose,
+  onSubmit,
+  initialData = null,
+  conferences = [],
+}) {
   const [formData, setFormData] = useState({
     name: initialData?.name || "",
-    conference: initialData?.conference || "",
+    conference_id: initialData?.conference_id || "",
     description: initialData?.description || "",
     color: initialData?.color || "#7C3AED",
   });
@@ -21,7 +26,7 @@ function TrackForm({ onClose, onSubmit, initialData = null }) {
     }));
   }
 
-  function handleSubmit(event) {
+  async function handleSubmit(event) {
     event.preventDefault();
 
     const newErrors = {};
@@ -30,8 +35,8 @@ function TrackForm({ onClose, onSubmit, initialData = null }) {
       newErrors.name = "Track name is required.";
     }
 
-    if (!formData.conference.trim()) {
-      newErrors.conference = "Conference is required.";
+    if (!formData.conference_id) {
+      newErrors.conference_id = "Conference is required.";
     }
 
     if (!formData.description.trim()) {
@@ -41,9 +46,15 @@ function TrackForm({ onClose, onSubmit, initialData = null }) {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      onSubmit?.(formData);
-      onClose();
-    }
+  const success = await onSubmit?.(formData);
+
+console.log("Track submit returned:", success);
+
+if (success !== false) {
+  console.log("Closing form...");
+  onClose();
+}
+}
   }
 
   return (
@@ -82,15 +93,26 @@ function TrackForm({ onClose, onSubmit, initialData = null }) {
           <div className="track-form-field">
             <label>Conference</label>
 
-            <input
-              type="text"
-              name="conference"
-              value={formData.conference}
+            <select
+              name="conference_id"
+              value={formData.conference_id}
               onChange={handleChange}
-              placeholder="e.g. GSR Conference 2026"
-            />
+            >
+              <option value="">Select a conference</option>
 
-            {errors.conference && <span>{errors.conference}</span>}
+              {conferences.map((conference) => (
+                <option
+                  key={conference.id}
+                  value={conference.id}
+                >
+                  {conference.name}
+                </option>
+              ))}
+            </select>
+
+            {errors.conference_id && (
+              <span>{errors.conference_id}</span>
+            )}
           </div>
 
           <div className="track-form-field">
@@ -104,7 +126,9 @@ function TrackForm({ onClose, onSubmit, initialData = null }) {
               rows="4"
             />
 
-            {errors.description && <span>{errors.description}</span>}
+            {errors.description && (
+              <span>{errors.description}</span>
+            )}
           </div>
 
           <div className="track-form-field">
@@ -127,8 +151,13 @@ function TrackForm({ onClose, onSubmit, initialData = null }) {
               Cancel
             </button>
 
-            <button type="submit" className="primary-button">
-              {initialData ? "Save Changes" : "Create Track"}
+            <button
+              type="submit"
+              className="primary-button"
+            >
+              {initialData
+                ? "Save Changes"
+                : "Create Track"}
             </button>
           </div>
         </form>

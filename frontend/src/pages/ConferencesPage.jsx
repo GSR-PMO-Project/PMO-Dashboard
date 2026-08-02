@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus, Search } from "lucide-react";
+import { apiFetch } from "../lib/api";
+import { supabase } from "../lib/supabaseClient";
 
 import ConferenceForm from "../components/UI/ConferenceForm";
 import TrackForm from "../components/UI/TrackForm";
@@ -67,7 +69,9 @@ const tracks = [
 
 function ConferencesPage() {
   const [activeTab, setActiveTab] = useState("conferences");
-  const [conferences] = useState(initialConferences);
+  const [conferences, setConferences] = useState([]);
+  const [tracksData, setTracksData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [showConferenceForm, setShowConferenceForm] = useState(false);
   const [conferenceToEdit, setConferenceToEdit] = useState(null);
@@ -79,13 +83,52 @@ function ConferencesPage() {
 
   const [toast, setToast] = useState(null);
 
-  function formatDate(date) {
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
+  useEffect(() => {
+  async function loadData() {
+    try {
+        
+        const {
+      data: { session },
+      } = await supabase.auth.getSession();
+
+      const token = session?.access_token;
+
+      if (!token) {
+       throw new Error("No authenticated user session found.");
+      }
+      const [conferencesResponse, tracksResponse] = await Promise.all([
+       apiFetch("/api/conferences", {}, token),
+       apiFetch("/api/tracks", {}, token),
+    ]);
+      console.log("Conferences:", conferencesResponse);
+      console.log("Tracks:", tracksResponse);
+
+      console.log("Start Date:", conferencesResponse[0].start_date);
+console.log("End Date:", conferencesResponse[0].end_date);
+
+      setConferences(conferencesResponse);
+      setTracksData(tracksResponse);
+    } catch (error) {
+      console.error("Failed to load data:", error);
+    } finally {
+      setLoading(false);
+    }
   }
+
+  loadData();
+}, []);
+
+  function formatDate(date) {
+  if (!date) {
+    return "—";
+  }
+
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
 
   function showSuccessToast(message) {
     setToast({
@@ -98,56 +141,245 @@ function ConferencesPage() {
     }, 3000);
   }
 
-  function handleCreateConference(formData) {
-    console.log("New conference:", formData);
+  async function handleCreateConference(formData) {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error("No authenticated user session found.");
+    }
+
+    const newConference = await apiFetch(
+      "/api/conferences",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          ...formData,
+          is_active: true,
+          registration_open: true,
+        }),
+      },
+      token
+    );
+
+    setConferences((previous) => [
+      newConference,
+      ...previous,
+    ]);
 
     showSuccessToast("Conference created successfully.");
-  }
 
-  function handleEditConference(formData) {
-    console.log("Edit conference:", formData);
+    return true;
+  } catch (error) {
+    console.error("Failed to create conference:", error);
+
+    setToast({
+      message: error.message,
+      type: "error",
+    });
+
+    return false;
+  }
+}
+
+  async function handleEditConference(formData) {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error("No authenticated user session found.");
+    }
+
+    const updatedConference = await apiFetch(
+      `/api/conferences/${conferenceToEdit.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify(formData),
+      },
+      token
+    );
+
+    setConferences((previous) =>
+      previous.map((conference) =>
+        conference.id === conferenceToEdit.id
+          ? updatedConference
+          : conference
+      )
+    );
 
     showSuccessToast("Conference updated successfully.");
-  }
 
-  function handleArchiveConference() {
-    console.log("Archive:", conferenceToArchive);
+    return true;
+  } catch (error) {
+    console.error("Failed to update conference:", error);
+
+    setToast({
+      message: error.message,
+      type: "error",
+    });
+
+    return false;
+  }
+}
+
+  async function handleArchiveConference() {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error("No authenticated user session found.");
+    }
+
+    const updatedConference = await apiFetch(
+      `/api/conferences/${conferenceToArchive.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          is_active: false,
+        }),
+      },
+      token
+    );
+
+    setConferences((previous) =>
+      previous.map((item) =>
+        item.id === conferenceToArchive.id
+          ? updatedConference
+          : item
+      )
+    );
 
     setConferenceToArchive(null);
-
     showSuccessToast("Conference archived successfully.");
+  } catch (error) {
+    console.error("Failed to archive conference:", error);
+
+    setToast({
+      message: error.message,
+      type: "error",
+    });
   }
+}
 
   function closeConferenceForm() {
     setShowConferenceForm(false);
     setConferenceToEdit(null);
   }
 
-  function handleTrackSubmit(formData) {
-    console.log(
-      trackToEdit ? "Edit track:" : "New track:",
-      formData
-    );
+  async function handleTrackSubmit(formData) {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error("No authenticated user session found.");
+    }
+
+    const savedTrack = await apiFetch(
+  trackToEdit
+    ? `/api/tracks/${trackToEdit.id}`
+    : "/api/tracks",
+  {
+    method: trackToEdit ? "PATCH" : "POST",
+    body: JSON.stringify(formData),
+  },
+  token
+);
+
+    if (trackToEdit) {
+  setTracksData((previous) =>
+    previous.map((track) =>
+      track.id === trackToEdit.id
+        ? savedTrack
+        : track
+    )
+  );
+} else {
+  setTracksData((previous) => [
+    savedTrack,
+    ...previous,
+  ]);
+}
+    setShowTrackForm(false);
+    setTrackToEdit(null);
 
     showSuccessToast(
-      trackToEdit
-        ? "Track updated successfully."
-        : "Track created successfully."
-    );
+  trackToEdit
+    ? "Track updated successfully."
+    : "Track created successfully."
+);
+
+    return true;
+  } catch (error) {
+    console.error("Failed to create track:", error);
+
+    setToast({
+      message: error.message,
+      type: "error",
+    });
+
+    return false;
   }
+}
 
   function closeTrackForm() {
     setShowTrackForm(false);
     setTrackToEdit(null);
   }
 
-  function handleDeleteTrack() {
-    console.log("Delete track:", trackToDelete);
+  async function handleDeleteTrack() {
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error("No authenticated user session found.");
+    }
+
+    await apiFetch(
+      `/api/tracks/${trackToDelete.id}`,
+      {
+        method: "DELETE",
+      },
+      token
+    );
+
+    setTracksData((previous) =>
+      previous.filter(
+        (track) => track.id !== trackToDelete.id
+      )
+    );
 
     setTrackToDelete(null);
 
     showSuccessToast("Track deleted successfully.");
+  } catch (error) {
+    console.error("Failed to delete track:", error);
+
+    setToast({
+      message: error.message,
+      type: "error",
+    });
   }
+}
 
   return (
     <div className="conferences-page">
@@ -221,33 +453,33 @@ function ConferencesPage() {
                 <strong>{conference.name}</strong>
 
                 <span>
-                  {formatDate(conference.startDate)} –{" "}
-                  {formatDate(conference.endDate)}
-                </span>
+                {formatDate(conference.start_date)} –{" "}
+                {formatDate(conference.end_date)}
+               </span>
 
-                <span>{conference.venue}</span>
+                <span>{conference.venue_name}</span>
 
-                <span>{conference.attendees}</span>
-
-                <span
-                  className={`registration-status ${
-                    conference.registration === "Open"
-                      ? "registration-open"
-                      : "registration-closed"
-                  }`}
-                >
-                  {conference.registration}
-                </span>
+                <span>— / {conference.max_attendees}</span>
 
                 <span
-                  className={`conference-status ${
-                    conference.status === "Active"
-                      ? "active-status"
-                      : "archived-status"
+               className={`registration-status ${
+               conference.registration_open
+               ? "registration-open"
+               : "registration-closed"
+              }`}
+               >
+              {conference.registration_open ? "Open" : "Closed"}
+              </span>
+
+                <span
+                 className={`conference-status ${
+                 conference.is_active
+                 ? "active-status"
+                   : "archived-status"
                   }`}
-                >
-                  {conference.status}
-                </span>
+           >
+               {conference.is_active ? "Active" : "Archived"}
+               </span>
 
                 <div className="conference-actions">
                   <button
@@ -279,7 +511,7 @@ function ConferencesPage() {
               <h3>All Tracks</h3>
 
               <span className="conference-count">
-                {tracks.length}
+                {tracksData.length}
               </span>
             </div>
 
@@ -301,10 +533,10 @@ function ConferencesPage() {
               <span>ACTIONS</span>
             </div>
 
-            {tracks.map((track) => (
+            {tracksData.map((track) => (
               <div
                 className="track-table-row"
-                key={track.name}
+                key={track.id}
               >
                 <div className="track-name">
                   <span
@@ -317,14 +549,25 @@ function ConferencesPage() {
                   <strong>{track.name}</strong>
                 </div>
 
-                <span>{track.conference}</span>
-                <span>{track.description}</span>
-                <span>{track.sessions}</span>
+                <span>
+  {
+    conferences.find(
+      (conference) => conference.id === track.conference_id
+    )?.name || "—"
+  }
+</span>
+
+<span>{track.description}</span>
+
+<span>—</span>
 
                 <div className="conference-actions">
                   <button
                     className="edit-button"
-                    onClick={() => setTrackToEdit(track)}
+                    onClick={() => {
+  setTrackToEdit(track);
+  setShowTrackForm(true);
+}}
                   >
                     Edit
                   </button>
@@ -355,12 +598,13 @@ function ConferencesPage() {
       )}
 
       {(showTrackForm || trackToEdit) && (
-        <TrackForm
-          initialData={trackToEdit}
-          onClose={closeTrackForm}
-          onSubmit={handleTrackSubmit}
-        />
-      )}
+  <TrackForm
+    initialData={trackToEdit}
+    conferences={conferences}
+    onClose={closeTrackForm}
+    onSubmit={handleTrackSubmit}
+  />
+)}
 
       {conferenceToArchive && (
         <ConfirmDialog

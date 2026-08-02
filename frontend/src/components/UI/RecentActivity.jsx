@@ -1,42 +1,54 @@
+import { useNavigate } from "react-router-dom";
+
 import "../../styles/RecentActivity.css";
 
-const activities = [
-  {
-    time: "14:32",
-    administrator: "system",
-    action: "Published announcement: Lunch Break Reminder",
-    module: "Communications",
-    status: "success",
-  },
-  {
-    time: "14:18",
-    administrator: "staff.hala@gsr.sa",
-    action: "Checked in Ahmad Al-Faraj to Deep Learning for Robotics",
-    module: "Check-in",
-    status: "success",
-  },
-  {
-    time: "13:55",
-    administrator: "admin@gsr.sa",
-    action: "Exported analytics report (session feedback)",
-    module: "Analytics",
-    status: "success",
-  },
-  {
-    time: "13:42",
-    administrator: "ops@gsr.sa",
-    action: "Updated user role: Noura Al-Sudairi → VIP",
-    module: "Users",
-    status: "success",
-  },
-];
+function RecentActivity({ checkinLogs = [] }) {
+  const navigate = useNavigate();
 
-function RecentActivity() {
+  const activities = [...checkinLogs]
+    .filter((log) => log.created_at)
+    .sort(
+      (firstLog, secondLog) =>
+        new Date(secondLog.created_at) -
+        new Date(firstLog.created_at)
+    )
+    .slice(0, 5)
+    .map((log) => {
+      const createdAt = new Date(log.created_at);
+
+      const checkinType =
+        log.checkin_type === "session"
+          ? "Session check-in"
+          : "Conference check-in";
+
+      return {
+        id: log.id,
+        time: createdAt.toLocaleTimeString(
+          "en-US",
+          {
+            hour: "2-digit",
+            minute: "2-digit",
+          }
+        ),
+        administrator:
+          log.scanned_by || "system",
+        action: `${checkinType} recorded`,
+        module: "Check-in",
+        status: "success",
+      };
+    });
+
   return (
     <div className="recent-activity">
       <div className="recent-activity-header">
         <h3>Recent Activity</h3>
-        <button type="button">View check-in logs →</button>
+
+        <button
+          type="button"
+          onClick={() => navigate("/registrations")}
+        >
+          View check-in logs →
+        </button>
       </div>
 
       <div className="activity-table-wrapper">
@@ -52,19 +64,37 @@ function RecentActivity() {
           </thead>
 
           <tbody>
-            {activities.map((activity, index) => (
-              <tr key={index}>
-                <td>{activity.time}</td>
-                <td>{activity.administrator}</td>
-                <td>{activity.action}</td>
-                <td>
-                  <span className="module-chip">{activity.module}</span>
-                </td>
-                <td>
-                  <span className="status-chip">{activity.status}</span>
+            {activities.length > 0 ? (
+              activities.map((activity) => (
+                <tr key={activity.id}>
+                  <td>{activity.time}</td>
+
+                  <td>
+                    {activity.administrator}
+                  </td>
+
+                  <td>{activity.action}</td>
+
+                  <td>
+                    <span className="module-chip">
+                      {activity.module}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span className="status-chip">
+                      {activity.status}
+                    </span>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="5">
+                  No recent activity found.
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>
