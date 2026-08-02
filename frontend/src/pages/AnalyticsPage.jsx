@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { useAuth } from "../hooks/useAuth";
 import "../styles/AnalyticsPage.css";
 import { useAnalytics } from "../hooks/useAnalytics";
 import Table from "../components/shared/Table";
@@ -36,6 +37,7 @@ function exportToCSV(rows, filename) {
 }
 
 function AnalyticsPage() {
+  const { session } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
   const [activeRange, setActiveRange] = useState("Last 24h");
 
@@ -47,7 +49,7 @@ function AnalyticsPage() {
     sessionFeedback,
     conferenceFeedback,
     conferenceNameById,
-  } = useAnalytics(activeRange);
+  } = useAnalytics(session?.access_token, activeRange);
 
   const handleExportCSV = () => {
     exportToCSV(registrationData, "registration-volume.csv");
