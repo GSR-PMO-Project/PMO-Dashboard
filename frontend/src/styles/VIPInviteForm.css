@@ -1,0 +1,138 @@
+.vip-form-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.vip-form-modal {
+  width: 100%;
+  max-width: 500px;
+  padding: 24px;
+
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.15);
+}
+
+.vip-form-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 24px;
+}
+
+.vip-form-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 19px;
+}
+
+.vip-form-header p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.vip-form-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 5px;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+
+  cursor: pointer;
+}
+
+.vip-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  margin-bottom: 17px;
+}
+
+.vip-form-field label {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.vip-form-field input {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 11px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: var(--surface);
+  color: var(--text);
+
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.vip-form-field input:focus {
+  border-color: var(--purple-mid);
+}
+
+.vip-form-field > span {
+  color: var(--error);
+  font-size: 10px;
+}
+
+.vip-form-field .react-datepicker-wrapper {
+  width: 100%;
+}
+
+.vip-form-field .react-datepicker__input-container {
+  width: 100%;
+}
+
+.vip-date-input {
+  width: 100%;
+}
+
+.vip-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  margin-top: 24px;
+  padding-top: 18px;
+
+  border-top: 1px solid var(--border);
+}
+
+.vip-form-cancel {
+  height: 38px;
+  padding: 0 15px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: var(--surface);
+  color: var(--text2);
+
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+
+  cursor: pointer;
+}

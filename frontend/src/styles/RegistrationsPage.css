@@ -213,3 +213,121 @@
 
   cursor: pointer;
 }
+.vip-table-head {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.vip-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vip-revoke-button {
+  padding: 5px 10px;
+
+  background-color: #fff5f5;
+  color: var(--error);
+  border: 1px solid #fbd5d5;
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 600;
+
+  cursor: pointer;
+}
+/* Check-in logs */
+.checkin-log-row {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr 0.8fr 1.2fr 0.8fr;
+  align-items: center;
+  gap: 16px;
+
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+
+  color: var(--text2);
+  font-size: 10px;
+}
+
+.checkin-log-row:last-child {
+  border-bottom: none;
+}
+
+.checkin-log-row strong {
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.checkin-log-head {
+  padding-top: 10px;
+  padding-bottom: 10px;
+
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.checkin-method {
+  width: fit-content;
+  padding: 4px 8px;
+
+  background-color: var(--lavender-bg);
+  color: var(--purple-mid);
+  border-radius: 20px;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.registrations-empty-state {
+  padding: 35px 18px;
+  color: var(--muted);
+  font-size: 11px;
+  text-align: center;
+}
+
+.vip-revoke-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.export-button:hover,
+.view-qr-button:hover {
+  border-color: var(--purple-mid);
+  color: var(--purple-mid);
+}
+
+@media (max-width: 900px) {
+  .registrations-card {
+    overflow-x: auto;
+  }
+
+  .registrations-card-header {
+    min-width: 760px;
+  }
+
+  .registration-table-row {
+    min-width: 760px;
+  }
+
+  .checkin-log-row {
+    min-width: 850px;
+  }
+}
+
+@media (max-width: 600px) {
+  .registrations-toolbar-actions {
+    align-items: stretch;
+  }
+
+  .registrations-search {
+    width: 180px;
+  }
+}
