@@ -87,6 +87,45 @@
   border-color: var(--purple-light);
 }
 
+.compose-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.compose-pin {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text2);
+  cursor: pointer;
+}
+
+.compose-priority {
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+  outline: none;
+}
+
+.compose-priority:focus {
+  border-color: var(--purple-light);
+}
+
+.error-text {
+  color: var(--error);
+  background: #FEE2E2;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin: 0;
+}
+
 .compose-actions {
   display: flex;
   gap: 10px;

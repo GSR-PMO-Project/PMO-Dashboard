@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Zap, ExternalLink } from "lucide-react";
-
 import "../styles/SettingsPage.css";
+import Toast from "../components/shared/Toast";
 
 const generalFields = [
   { label: "App Name", value: "GSR Conference App" },
@@ -9,9 +9,6 @@ const generalFields = [
   { label: "Default Language", value: "Arabic / English" },
   { label: "Timezone", value: "Asia/Riyadh (UTC+3)" },
 ];
-// TODO(API): these aren't backed by a settings table per database-admin-guide.md
-// (Settings is P2 / mostly informational) — keep as static config unless a
-// settings table gets added later.
 
 const securityToggles = [
   { key: "mfa", label: "MFA Enforcement", subtitle: "Required", defaultOn: true },
@@ -25,40 +22,54 @@ function SettingsPage() {
     Object.fromEntries(securityToggles.map((t) => [t.key, t.defaultOn]))
   );
   const [testStatus, setTestStatus] = useState(null); // null | "checking" | "ok" | "fail"
+  const [toast, setToast] = useState(null);
 
   const handleToggle = (key) => {
     setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
   const handleTestConnection = async () => {
-    setTestStatus("checking");
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL.replace("/api", "")}/health`
-      );
-      const data = await res.json();
-      setTestStatus(data.ok ? "ok" : "fail");
-    } catch {
+      setTestStatus("checking");
+
+      for (let attempt = 1; attempt <= 5; attempt++) {
+        try {
+          const res = await fetch(
+            `${import.meta.env.VITE_API_URL.replace("/api", "")}/health`
+          );
+          const data = await res.json();
+
+          if (data.ok) {
+            setTestStatus("ok");
+            setToast({ message: "Backend connected successfully", type: "success" });
+            return;
+          }
+        } catch (error) {
+          console.log(`Attempt ${attempt} failed`, error);
+        }
+      }
+
       setTestStatus("fail");
-    }
-  };
+      setToast({ message: "Unable to connect to the backend, please try again", type: "error" });
+    };
 
   return (
     <div className="settings-page">
+
       <div className="settings-grid">
         <div className="card">
           <h3>General</h3>
+
           <div className="settings-list">
             {generalFields.map((field) => (
               <div className="settings-row" key={field.label}>
                 <span className="settings-label">{field.label}</span>
                 <div className="settings-value">
                   <span>{field.value}</span>
-                  <button className="btn-edit-link">Edit</button>
                 </div>
               </div>
             ))}
           </div>
+
         </div>
 
         <div className="card">
@@ -79,15 +90,35 @@ function SettingsPage() {
               </div>
             ))}
           </div>
+
         </div>
-      </div>
+        </div>
 
       <div className="card supabase-card">
         <div className="supabase-header">
           <h3>
             <Zap size={16} className="supabase-icon" /> Supabase Backend
           </h3>
-          <span className="badge badge-success">● Connected</span>
+          <span
+            className={`badge ${
+              testStatus === "ok"
+                ? "badge-success"
+                : testStatus === "fail"
+                ? "badge-danger"
+                : testStatus === "checking"
+                ? "badge-warning"
+                : "badge-neutral"
+            }`}
+          >
+            {testStatus === "ok"
+              ? "● Connected"
+              : testStatus === "fail"
+              ? "● Disconnected"
+              : testStatus === "checking"
+              ? "● Checking..."
+              : "● Unknown"}
+          </span>
+
         </div>
 
         <div className="supabase-grid">
@@ -128,11 +159,21 @@ function SettingsPage() {
         </a>
 
           {testStatus === "ok" && <span className="test-result ok">✓ Backend reachable</span>}
-          {testStatus === "fail" && <span className="test-result fail">✗ Backend unreachable</span>}
+          {testStatus === "fail" && <span className="test-result fail">Unable to connect to the backend.
+                                                                       Please try again later.</span>}
         </div>
       </div>
-    </div>
-  );
-}
 
+
+
+  {toast && (
+          <Toast
+            message={toast.message}
+            type={toast.type}
+            onClose={() => setToast(null)}
+          />
+        )}
+      </div>
+    );
+  }
 export default SettingsPage;

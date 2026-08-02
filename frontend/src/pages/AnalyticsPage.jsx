@@ -1,7 +1,10 @@
-import { useState , useEffect} from "react";
+import { useState } from "react";
 import { BarChart, Bar, XAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { api } from "../lib/api";
 import "../styles/AnalyticsPage.css";
+import { useAnalytics } from "../hooks/useAnalytics";
+import Table from "../components/shared/Table";
+import Tabs from "../components/shared/Tabs";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 
 const ranges = ["Last 24h", "Day 1", "Day 2", "Day 3"];
 const tabs = [
@@ -10,44 +13,6 @@ const tabs = [
   { key: "conferenceFeedback", label: "Conference Feedback" },
 ];
 
-function groupRegistrationsByHour(registrations) {
-  const counts = {};
-  registrations.forEach((r) => {
-    const hour = new Date(r.created_at).getHours();
-    const label = `${String(hour).padStart(2, "0")}h`;
-    counts[label] = (counts[label] || 0) + 1;
-  });
-
-  return Object.entries(counts)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([time, value]) => ({ time, value }));
-}
-
-
-function filterRegistrationsByRange(registrations, range, activeConference) {
-  if (range === "Last 24h") {
-    const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-    return registrations.filter(
-      (r) => new Date(r.created_at).getTime() >= cutoff
-    );
-  }
-
-  if (!activeConference) return registrations;
-
-  const dayOffset = { "Day 1": 0, "Day 2": 1, "Day 3": 2 }[range] ?? 0;
-  const start = new Date(activeConference.start_date);
-  start.setDate(start.getDate() + dayOffset);
-  const targetDay = start.toISOString().slice(0, 10);
-
-  return registrations.filter(
-    (r) => r.created_at?.slice(0, 10) === targetDay
-  );
-}
-
-function average(nums) {
-  if (!nums.length) return 0;
-  return nums.reduce((a, b) => a + b, 0) / nums.length;
-}
 function exportToCSV(rows, filename) {
   if (!rows.length) return;
 
@@ -73,80 +38,16 @@ function exportToCSV(rows, filename) {
 function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState("overview");
   const [activeRange, setActiveRange] = useState("Last 24h");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const [registrationData, setRegistrationData] = useState([]);
-  const [kpis, setKpis] = useState([]);
-  const [sessionFeedback, setSessionFeedback] = useState([]);
-  const [conferenceFeedback, setConferenceFeedback] = useState([]);
-  const [conferenceNameById, setConferenceNameById] = useState({});
-  const [rawRegistrations, setRawRegistrations] = useState([]);
-  const [conferencesList, setConferencesList] = useState([]);
-
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-
-    Promise.all([
-      api.get("/registrations"),
-      api.get("/vip-invitations"),
-      api.get("/views/session-feedback-summary"),
-      api.get("/views/conference-feedback-summary"),
-      api.get("/conferences"),
-    ])
-    .then(([registrations, vipInvitations, sessionFb, conferenceFb, conferences])  => {
-        setConferenceNameById(
-          Object.fromEntries(conferences.map((c) => [c.id, c.name]))
-        );
-    setRawRegistrations(registrations);
-
-
-
-        const checkedIn = registrations.filter((r) => r.checked_in).length;
-        const checkinRate = registrations.length
-          ? Math.round((checkedIn / registrations.length) * 100)
-          : 0;
-
-        const redeemed = vipInvitations.filter((v) => v.is_used).length;
-        const vipRate = vipInvitations.length
-          ? Math.round((redeemed / vipInvitations.length) * 100)
-          : 0;
-
-        const avgSessionRating = average(
-          sessionFb.map((s) => s.overall_rating).filter((n) => n != null)
-        );
-        const avgConferenceRating = average(
-          conferenceFb.map((c) => c.overall_rating).filter((n) => n != null)
-        );
-
-        setKpis([
-          { label: "Avg. Session Rating", value: `${avgSessionRating.toFixed(1)} / 5`, variant: "success" },
-          { label: "Avg. Conference Rating", value: `${avgConferenceRating.toFixed(1)} / 5`, variant: "success" },
-          { label: "Check-in Rate", value: `${checkinRate}%`, variant: "purple" },
-          { label: "Waitlist Promotions", value: "—", variant: "purple" },
-          { label: "VIP Redemption Rate", value: `${vipRate}%`, variant: "warn" },
-        ]);
-
-        setSessionFeedback(sessionFb);
-        setConferenceFeedback(conferenceFb);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    if (rawRegistrations.length === 0) return;
-
-    const activeConference = conferencesList.find((c) => c.is_active) || conferencesList[0];
-    const filtered = filterRegistrationsByRange(
-      rawRegistrations,
-      activeRange,
-      activeConference
-    );
-
-    setRegistrationData(groupRegistrationsByHour(filtered));
-  }, [rawRegistrations, activeRange, conferencesList]);
+  const {
+    loading,
+    error,
+    registrationData,
+    kpis,
+    sessionFeedback,
+    conferenceFeedback,
+    conferenceNameById,
+  } = useAnalytics(activeRange);
 
   const handleExportCSV = () => {
     exportToCSV(registrationData, "registration-volume.csv");
@@ -157,20 +58,67 @@ function AnalyticsPage() {
     alert("PDF export is a P2 (stretch) feature");
   };
 
+  const sessionColumns = [
+    {
+      key: "session_id",
+      label: "Session",
+    },
+    {
+      key: "speaker",
+      label: "Speaker Rating",
+      render: (f) => "★".repeat(f.speaker_communication_rating || 0),
+    },
+    {
+      key: "efficiency",
+      label: "Efficiency Rating",
+      render: (f) => "★".repeat(f.session_efficiency_rating || 0),
+    },
+    {
+      key: "overall_rating",
+      label: "Overall",
+    },
+    {
+      key: "comments",
+      label: "Comments",
+      className: "muted-text",
+      render: (f) => f.additional_comments || "—",
+    },
+  ];
+
+  const conferenceColumns = [
+    {
+      key: "conference",
+      label: "Conference",
+      render: (f) =>
+        conferenceNameById[f.conference_id] || f.conference_id,
+    },
+    {
+      key: "rating",
+      label: "Rating",
+      render: (f) =>
+        "★".repeat(Math.round(f.avg_overall_rating) || 0),
+    },
+    {
+      key: "feedback_count",
+      label: "Feedback Count",
+    },
+    {
+      key: "comments",
+      label: "Comments",
+      className: "muted-text",
+      render: (f) => f.additional_comments || "—",
+    },
+  ];
+
   return (
     <div className="analytics-page">
-      <div className="analytics-tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            className={`analytics-tab ${activeTab === tab.key ? "active" : ""}`}
-            onClick={() => setActiveTab(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      {loading && <p className="muted-text">Loading analytics...</p>}
+      <Tabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
+
+      {loading && <LoadingSpinner />}
       {!loading && error && <p className="error-text">{error}</p>}
 
       {!loading && !error && activeTab === "overview" && (
@@ -241,58 +189,23 @@ function AnalyticsPage() {
       {!loading && !error && activeTab === "sessionFeedback" && (
         <div className="card">
           <h3>Session Feedback</h3>
-          {sessionFeedback.length === 0 ? (
-            <p className="muted-text">No session feedback yet.</p>
-          ) : (
-          <table className="feedback-table">
-            <thead>
-              <tr>
-                <th>Session</th>
-                <th>Speaker Rating</th>
-                <th>Efficiency Rating</th>
-                <th>Overall</th>
-                <th>Comments</th>
-              </tr>
-            </thead>
-            <tbody>
-              {sessionFeedback.map((f) => (
-                <tr key={f.session_id}>
-                  <td>{f.session_id}</td>
-                  <td>{"★".repeat(f.speaker_communication_rating || 0)}</td>
-                  <td>{"★".repeat(f.session_efficiency_rating || 0)}</td>
-                  <td>{f.overall_rating}</td>
-                  <td className="muted-text">{f.additional_comments || "—"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Table
+            columns={sessionColumns}
+            rows={sessionFeedback}
+            emptyMessage="No session feedback yet."
+          />
+          </div>
           )}
-        </div>
-      )}
 
       {!loading && !error && activeTab === "conferenceFeedback" && (
         <div className="card">
           <h3>Conference Feedback</h3>
-          <table className="feedback-table">
-            <thead>
-              <tr>
-                <th>Conference</th>
-                <th>Rating</th>
-                <th>Feedback Count</th>
-                <th>Comments</th>
-              </tr>
-            </thead>
-            <tbody>
-              {conferenceFeedback.map((f) => (
-                <tr key={f.conference_id}>
-                  <td>{conferenceNameById[f.conference_id] || f.conference_id}</td>
-                  <td>{"★".repeat(Math.round(f.avg_overall_rating) || 0)}</td>
-                  <td>{f.feedback_count}</td>
-                  <td className="muted-text">—</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Table
+            columns={conferenceColumns}
+            rows={conferenceFeedback}
+            emptyMessage="No conference feedback yet."
+          />
+
         </div>
       )}
     </div>

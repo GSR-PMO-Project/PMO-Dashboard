@@ -1,21 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { api } from "../lib/api";
 import { Search } from "lucide-react";
-// import { api } from "../lib/api"; // TODO: uncomment when connecting to real backend
-
+import Modal from "../components/shared/Modal";
+import FormField from "../components/shared/FormField";
+import Table from "../components/shared/Table";
+import Tabs from "../components/shared/Tabs";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import "../styles/UsersPage.css";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 
-const initialUsers = [
-  { id: 1, name: "Ahmad Al-Rashid", email: "admin@gsr.sa", role: "admin", lastActive: "Just now" },
-  { id: 2, name: "Sara Khalid", email: "ops@gsr.sa", role: "organizer", lastActive: "2h ago" },
-  { id: 3, name: "Dr. Sarah Johnson", email: "sarah.johnson@example.com", role: "speaker", lastActive: "Yesterday" },
-  { id: 4, name: "Eng. Noura Al-Sudairi", email: "vip2@example.com", role: "vip", lastActive: "3d ago" },
-  { id: 5, name: "Ahmad Al-Faraj", email: "ahmad.f@example.com", role: "attendee", lastActive: "1h ago" },
-  { id: 6, name: "Lama Al-Otaibi", email: "lama.o@example.com", role: "attendee", lastActive: "1h ago" },
-];
+dayjs.extend(relativeTime);
 
-// TODO(API): replace initialUsers above + useState below with:
-//   const [users, setUsers] = useState([]);
-//   useEffect(() => { api.get("/profiles").then(setUsers); }, []);
 
 const tabs = [
   { key: "all", label: "All" },
@@ -33,45 +29,180 @@ const roleToTab = {
   attendee: "attendees",
 };
 
-function getInitials(name) {
-  return name.split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+const emptyForm = { full_name: "", email: "", role: "attendee" };
+
+const roleOptions = [
+  { value: "admin", label: "admin" },
+  { value: "organizer", label: "organizer" },
+  { value: "speaker", label: "speaker" },
+  { value: "vip", label: "vip" },
+  { value: "attendee", label: "attendee" },
+];
+
+
+
+function getInitials(name = "") {
+  if (!name.trim()) return "?";
+
+  return name
+    .split(" ")
+    .map((p) => p[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
 }
 
 function UsersPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [search, setSearch] = useState("");
-  const [users, setUsers] = useState(initialUsers);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleRoleChange = (id, newRole) => {
-    // TODO(API): replace with await api.patch(`/profiles/${id}`, { role: newRole })
-    setUsers(users.map((u) => (u.id === id ? { ...u, role: newRole } : u)));
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+
+      const data = await api.get("/profiles");
+      setUsers(data);
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRoleChange = async (id, newRole) => {
+    try {
+      await api.patch(`/profiles/${id}`, {
+        role: newRole,
+      });
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === id ? { ...u, role: newRole } : u
+        )
+      );
+    } catch (err) {
+      console.error("Failed to update role:", err);
+    }
   };
 
   const handleRevoke = (id) => {
     setUsers(users.filter((u) => u.id !== id));
   };
 
+   const openAddModal = () => {
+     setForm(emptyForm);
+     setShowAddModal(true);
+   };
+
+   const closeAddModal = () => {
+     setShowAddModal(false);
+   };
+
+  const handleFormChange = (field, value) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleAddUser = async (e) => {
+      e.preventDefault();
+      if (!form.full_name.trim() || !form.email.trim()) return;
+
+      setSaving(true);
+      try {
+        const newUser = await api.post("/profiles", form);
+        setUsers((prev) => [...prev, newUser]);
+        setShowAddModal(false);
+      } catch (err) {
+        console.error("Failed to add user:", err);
+      } finally {
+        setSaving(false);
+      }
+    };
+
   const filteredUsers = users
     .filter((u) => activeTab === "all" || roleToTab[u.role] === activeTab)
-    .filter(
-      (u) =>
-        u.name.toLowerCase().includes(search.toLowerCase()) ||
-        u.email.toLowerCase().includes(search.toLowerCase())
-    );
+    .filter((u) => {
+      const fullName = u.full_name || "";
+      const email = u.email || "";
+
+      return (
+        fullName.toLowerCase().includes(search.toLowerCase()) ||
+        email.toLowerCase().includes(search.toLowerCase())
+      );
+    });
+    const columns = [
+      {
+        key: "name",
+        label: "Name",
+        render: (u) => (
+          <div className="user-name-cell">
+            <span className="user-avatar">{getInitials(u.full_name)}</span>
+            {u.full_name || "No Name"}
+          </div>
+        ),
+      },
+      {
+        key: "email",
+        label: "Email",
+      },
+      {
+        key: "role",
+        label: "Role",
+        render: (u) => (
+          <select
+            className="role-select"
+            value={u.role}
+            onChange={(e) => handleRoleChange(u.id, e.target.value)}
+          >
+            <option value="admin">admin</option>
+            <option value="organizer">organizer</option>
+            <option value="speaker">speaker</option>
+            <option value="vip">vip</option>
+            <option value="attendee">attendee</option>
+          </select>
+        ),
+      },
+      {
+        key: "updated_at",
+        label: "Last Active",
+        className: "muted-text",
+        render: (u) => dayjs(u.updated_at).fromNow(),
+      },
+      {
+        key: "actions",
+        label: "Actions",
+        render: (u) => (
+          <>
+            <button
+              className="btn-revoke"
+              onClick={() => handleRevoke(u.id)}
+            >
+              Revoke
+            </button>
+          </>
+        ),
+      },
+    ];
 
   return (
     <div className="users-page">
-      <div className="users-tabs">
-        {tabs.map((tab) => (
-          <button
-            key={tab.key}
-            className={`users-tab ${activeTab === tab.key ? "active" : ""}`}
-            onClick={() => setActiveTab(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <Tabs
+        tabs={tabs}
+        activeTab={activeTab}
+        onChange={setActiveTab}
+      />
 
       <div className="card">
         <div className="users-header">
@@ -88,55 +219,72 @@ function UsersPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <button className="btn-invite">+ Invite Admin</button>
+
+            <button className="btn-invite" onClick={openAddModal}>
+                          + Add User
+                        </button>
           </div>
         </div>
 
-        <table className="users-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Last Active</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredUsers.map((u) => (
-              <tr key={u.id}>
-                <td>
-                  <div className="user-name-cell">
-                    <span className="user-avatar">{getInitials(u.name)}</span>
-                    {u.name}
-                  </div>
-                </td>
-                <td>{u.email}</td>
-                <td>
-                  <select
-                    className="role-select"
-                    value={u.role}
-                    onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                  >
-                    <option value="admin">admin</option>
-                    <option value="organizer">organizer</option>
-                    <option value="speaker">speaker</option>
-                    <option value="vip">vip</option>
-                    <option value="attendee">attendee</option>
-                  </select>
-                </td>
-                <td className="muted-text">{u.lastActive}</td>
-                <td>
-                  <span className={`role-badge role-${u.role}`}>{u.role}</span>
-                  <button className="btn-revoke" onClick={() => handleRevoke(u.id)}>
-                    Revoke
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {loading ? (
+          <LoadingSpinner text="Loading users..." />
+        ) : (
+          <Table
+            columns={columns}
+            rows={filteredUsers}
+            emptyMessage="No users found."
+          />
+        )}
+
       </div>
+
+{showAddModal && (
+  <Modal title="Add User" onClose={closeAddModal}>
+    <form onSubmit={handleAddUser} className="modal-form">
+      <FormField
+        label="Name"
+        value={form.full_name}
+        onChange={(v) => handleFormChange("full_name", v)}
+        required
+      />
+
+      <FormField
+        label="Email"
+        type="email"
+        value={form.email}
+        onChange={(v) => handleFormChange("email", v)}
+        required
+      />
+
+      <FormField
+        label="Role"
+        type="select"
+        value={form.role}
+        onChange={(v) => handleFormChange("role", v)}
+        options={roleOptions}
+      />
+
+      <div className="modal-actions">
+        <button
+          type="button"
+          className="btn-secondary"
+          onClick={closeAddModal}
+        >
+          Cancel
+        </button>
+
+        <button
+          type="submit"
+          className="btn-invite"
+          disabled={saving}
+        >
+          {saving ? "Adding..." : "Add User"}
+        </button>
+      </div>
+    </form>
+  </Modal>
+)}
+
     </div>
   );
 }
