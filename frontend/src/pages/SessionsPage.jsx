@@ -10,6 +10,9 @@ import { supabase } from "../lib/supabaseClient";
 
 import "../styles/SessionsPage.css";
 
+// Not a column - every session's waitlist is capped at this fixed size.
+const MAX_WAITLIST_PER_SESSION = 10;
+
 function SessionsPage() {
   const [sessions, setSessions] = useState([]);
   const [conferences, setConferences] = useState([]);
@@ -52,15 +55,70 @@ function SessionsPage() {
   }
 
   async function fetchSessions(token) {
-    const sessionsResponse = await apiFetch(
-      "/api/views/sessions-with-details",
-      {},
-      token
-    );
+    const [
+      sessionsResponse,
+      rawSessionsResponse,
+      waitlistedResponse,
+    ] = await Promise.all([
+      apiFetch(
+        "/api/views/sessions-with-details",
+        {},
+        token
+      ),
+      apiFetch("/api/sessions?limit=1000", {}, token),
+      apiFetch(
+        "/api/scheduled-sessions?status=waitlisted&limit=1000",
+        {},
+        token
+      ),
+    ]);
 
-    return Array.isArray(sessionsResponse)
+    const sessionsWithDetails = Array.isArray(
+      sessionsResponse
+    )
       ? sessionsResponse
       : [];
+
+    const rawSessionsById = new Map(
+      (Array.isArray(rawSessionsResponse)
+        ? rawSessionsResponse
+        : []
+      ).map((session) => [session.id, session])
+    );
+
+    const waitlistCountBySessionId = new Map();
+
+    for (const entry of Array.isArray(
+      waitlistedResponse
+    )
+      ? waitlistedResponse
+      : []) {
+      waitlistCountBySessionId.set(
+        entry.session_id,
+        (waitlistCountBySessionId.get(
+          entry.session_id
+        ) || 0) + 1
+      );
+    }
+
+    return sessionsWithDetails.map((session) => {
+      const rawSession = rawSessionsById.get(
+        session.id
+      );
+
+      return {
+        ...session,
+        track_id:
+          rawSession?.track_id ??
+          session.track_id ??
+          "",
+        waitlist_enabled:
+          rawSession?.waitlist_enabled ?? false,
+        current_waitlist:
+          waitlistCountBySessionId.get(session.id) ||
+          0,
+      };
+    });
   }
 
   function showToast(message, type = "success") {
@@ -270,6 +328,14 @@ function SessionsPage() {
     }
 
     return `${currentCapacity}/${session.max_capacity}`;
+  }
+
+  function getWaitlist(session) {
+    if (!session.waitlist_enabled) {
+      return "—";
+    }
+
+    return `${session.current_waitlist ?? 0}/${MAX_WAITLIST_PER_SESSION}`;
   }
 
   function getStatus(session) {
@@ -546,6 +612,7 @@ function SessionsPage() {
             <span>ROOM</span>
             <span>SPEAKERS</span>
             <span>CAPACITY</span>
+            <span>WAITLIST</span>
             <span>STATUS</span>
             <span>ACTIONS</span>
           </div>
@@ -602,6 +669,10 @@ function SessionsPage() {
 
                   <span>
                     {getCapacity(session)}
+                  </span>
+
+                  <span>
+                    {getWaitlist(session)}
                   </span>
 
                   <span

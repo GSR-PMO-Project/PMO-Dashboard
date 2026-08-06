@@ -16,6 +16,7 @@ dayjs.extend(relativeTime);
 
 const tabs = [
   { key: "all", label: "All" },
+  { key: "admin", label: "Admin" },
   { key: "staff", label: "Staff" },
   { key: "speakers", label: "Speakers" },
   { key: "vip", label: "VIP" },
@@ -23,7 +24,7 @@ const tabs = [
 ];
 
 const roleToTab = {
-  admin: "staff",
+  admin: "admin",
   organizer: "staff",
   speaker: "speakers",
   vip: "vip",
