@@ -343,9 +343,26 @@ useEffect(() => {
 
     setShowVIPForm(false);
 
-    showSuccessToast(
-      "VIP invitation created successfully."
-    );
+    try {
+      await apiFetch(
+        `/api/vip-invitations/${createdInvitation.id}/send`,
+        { method: "POST" },
+        token
+      );
+      showSuccessToast(
+        "VIP invitation created and emailed successfully."
+      );
+    } catch (sendError) {
+      console.error(
+        "Failed to send VIP invitation email:",
+        sendError
+      );
+      setToast({
+        message:
+          "Invitation created, but the email failed to send.",
+        type: "error",
+      });
+    }
   } catch (error) {
     console.error(
       "Failed to create VIP invitation:",
@@ -386,6 +403,12 @@ async function handleResendInvite(invitee) {
       token
     );
 
+    await apiFetch(
+      `/api/vip-invitations/${invitee.id}/send`,
+      { method: "POST" },
+      token
+    );
+
     const newExpiry = new Date(
       Date.now() + 7 * 24 * 60 * 60 * 1000
     );
@@ -403,7 +426,7 @@ async function handleResendInvite(invitee) {
     );
 
     showSuccessToast(
-      "Invitation expiry extended successfully."
+      "Invitation extended and resent successfully."
     );
   } catch (error) {
     console.error(
