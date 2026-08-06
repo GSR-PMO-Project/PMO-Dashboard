@@ -30,9 +30,36 @@ export const sessionsRouter = crudRouter({
 });
 
 // RPC endpoints layered on top of the base CRUD routes.
+
+// Not a column - every session's waitlist is capped at this fixed size.
+const MAX_WAITLIST_PER_SESSION = 10;
+
 sessionsRouter.post(
   "/:id/register",
   asyncHandler(async (req, res) => {
+    const { data: session, error: sessionError } = await supabaseAdmin
+      .from("sessions")
+      .select("max_capacity, current_capacity, waitlist_enabled")
+      .eq("id", req.params.id)
+      .single();
+    if (sessionError) throw sessionError;
+
+    const isFull =
+      session.max_capacity !== null && session.current_capacity >= session.max_capacity;
+
+    if (isFull && session.waitlist_enabled) {
+      const { count, error: countError } = await supabaseAdmin
+        .from("scheduled_sessions")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", req.params.id)
+        .eq("status", "waitlisted");
+      if (countError) throw countError;
+
+      if (count >= MAX_WAITLIST_PER_SESSION) {
+        return res.status(409).json({ error: "The waitlist for this session is full." });
+      }
+    }
+
     const { data, error } = await supabaseAdmin.rpc("register_for_session", {
       user_id: req.body.user_id,
       session_id: req.params.id,
