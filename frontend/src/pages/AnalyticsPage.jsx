@@ -6,6 +6,7 @@ import { useAnalytics } from "../hooks/useAnalytics";
 import Table from "../components/shared/Table";
 import Tabs from "../components/shared/Tabs";
 import LoadingSpinner from "../components/shared/LoadingSpinner";
+import { generateAnalyticsPDF } from "../lib/exportPDF";
 
 const ranges = ["Last 24h", "Day 1", "Day 2", "Day 3"];
 const tabs = [
@@ -56,9 +57,17 @@ function AnalyticsPage() {
   };
 
   const handleExportPDF = () => {
-    // P2 per sprint plan — intentionally deferred
-    alert("PDF export is a P2 (stretch) feature");
-  };
+      const doc = generateAnalyticsPDF({
+        conferenceName: undefined,
+        activeRange,
+        kpis,
+        registrationData,
+        sessionFeedback,
+        conferenceFeedback,
+        conferenceNameById,
+      });
+      doc.save(`analytics-report-${activeRange.replace(/\s+/g, "-")}.pdf`);
+    };
 
   const sessionColumns = [
     {
