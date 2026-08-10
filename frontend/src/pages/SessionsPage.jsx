@@ -7,6 +7,7 @@ import Toast from "../components/UI/Toast";
 
 import { apiFetch } from "../lib/api";
 import { supabase } from "../lib/supabaseClient";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 
 import "../styles/SessionsPage.css";
 
@@ -533,13 +534,7 @@ function SessionsPage() {
   }
 
   if (loading) {
-    return (
-      <div className="sessions-page">
-        <div className="sessions-card">
-          <p>Loading sessions...</p>
-        </div>
-      </div>
-    );
+    return <LoadingSpinner fullPage text="Loading sessions..." />;
   }
 
   if (error) {

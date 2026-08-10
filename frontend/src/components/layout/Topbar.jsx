@@ -1,4 +1,4 @@
-import { Bell, CircleHelp } from "lucide-react";
+import { Bell } from "lucide-react";
 import { useLocation } from "react-router-dom";
 import "../../styles/Topbar.css";
 
@@ -62,11 +62,6 @@ function Topbar() {
         <button className="icon-button" aria-label="Notifications">
           <Bell size={18} />
           <span className="notification-dot"></span>
-        </button>
-
-        <button className="help-button">
-          <CircleHelp size={17} />
-          Help
         </button>
       </div>
     </header>

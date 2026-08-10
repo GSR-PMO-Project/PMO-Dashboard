@@ -83,21 +83,3 @@
   border: 1px solid white;
 }
 
-.help-button {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  padding: 8px 12px;
-
-  border: 1px solid var(--border);
-  border-radius: 10px;
-
-  background-color: var(--surface);
-  color: var(--text2);
-
-  font-size: 12px;
-  font-weight: 600;
-
-  cursor: pointer;
-}

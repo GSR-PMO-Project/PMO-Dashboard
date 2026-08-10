@@ -1,12 +1,16 @@
 .sidebar {
   width: 252px;
-  min-height: 100vh;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
   background-color: var(--purple-deep);
   color: white;
   padding: 24px 16px;
   flex-shrink: 0;
+  overflow-y: auto;
 
-  
+
   display: flex;
   flex-direction: column;
 }
@@ -74,14 +78,62 @@
 }
 
 /* User Card */
+.sidebar-user-wrapper {
+  position: relative;
+  margin-top: 20px;
+  flex-shrink: 0;
+}
+
 .sidebar-user {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 100%;
   padding: 14px 12px;
-  margin-top: 20px;
+  border: none;
   border-radius: 14px;
   background-color: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-user:hover,
+.sidebar-user.open {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.sidebar-user-menu {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: var(--purple-btn);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.sidebar-signout-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: none;
+  color: white;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-signout-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .user-avatar {
@@ -101,6 +153,7 @@
 
 .user-details {
   flex: 1;
+  min-width: 0;
 }
 
 .user-name {
@@ -108,6 +161,9 @@
   color: white;
   font-size: 12px;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-role {

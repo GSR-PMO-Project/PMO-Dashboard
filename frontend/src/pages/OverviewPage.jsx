@@ -14,6 +14,7 @@ import RecentActivity from "../components/UI/RecentActivity";
 
 import { useOverviewData } from "../hooks/useOverviewData";
 import { supabase } from "../lib/supabaseClient";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 
 import "../styles/OverviewPage.css";
 
@@ -56,7 +57,7 @@ function OverviewPage() {
     useOverviewData(token);
 
   if (authLoading || loading) {
-    return <p>Loading overview...</p>;
+    return <LoadingSpinner fullPage text="Loading overview..." />;
   }
 
   if (!token) {

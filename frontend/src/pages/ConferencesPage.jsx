@@ -7,6 +7,7 @@ import ConferenceForm from "../components/UI/ConferenceForm";
 import TrackForm from "../components/UI/TrackForm";
 import ConfirmDialog from "../components/UI/ConfirmDialog";
 import Toast from "../components/UI/Toast";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 
 import "../styles/ConferencesPage.css";
 
@@ -380,6 +381,10 @@ console.log("End Date:", conferencesResponse[0].end_date);
     });
   }
 }
+
+  if (loading) {
+    return <LoadingSpinner fullPage text="Loading conferences..." />;
+  }
 
   return (
     <div className="conferences-page">

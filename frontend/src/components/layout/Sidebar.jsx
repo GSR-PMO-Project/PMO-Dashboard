@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from "react";
 import { NavLink } from "react-router-dom";
 
 import {
@@ -10,12 +11,82 @@ import {
   BarChart3,
   Users,
   Settings,
+  LogOut,
 } from "lucide-react";
+
+import { useAuth } from "../../hooks/useAuth";
+import { apiFetch } from "../../lib/api";
 
 import gsrLogo from "../../assets/LogoWhite.png";
 import "../../styles/Sidebar.css";
 
+function getInitials(name = "") {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
 function Sidebar() {
+  const { session, signOut } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const userCardRef = useRef(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadProfile() {
+      const userId = session?.user?.id;
+      const token = session?.access_token;
+
+      if (!userId || !token) return;
+
+      try {
+        const data = await apiFetch(
+          `/api/profiles/${userId}`,
+          {},
+          token
+        );
+
+        if (isMounted) setProfile(data);
+      } catch (error) {
+        console.error("Failed to load profile:", error);
+      }
+    }
+
+    loadProfile();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session?.user?.id, session?.access_token]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        userCardRef.current &&
+        !userCardRef.current.contains(event.target)
+      ) {
+        setMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const displayName =
+    profile?.full_name?.trim() ||
+    session?.user?.email ||
+    "Admin User";
+
+  const displayRole = profile?.role || "Super Admin";
+
   return (
     <aside className="sidebar">
       <div className="sidebar-brand">
@@ -124,15 +195,37 @@ function Sidebar() {
         </NavLink>
       </nav>
 
-      <div className="sidebar-user">
-        <div className="user-avatar">AU</div>
+      <div className="sidebar-user-wrapper" ref={userCardRef}>
+        {menuOpen && (
+          <div className="sidebar-user-menu">
+            <button
+              className="sidebar-signout-button"
+              onClick={() => {
+                setMenuOpen(false);
+                signOut();
+              }}
+            >
+              <LogOut size={15} />
+              Sign Out
+            </button>
+          </div>
+        )}
 
-        <div className="user-details">
-          <p className="user-name">Admin User</p>
-          <span className="user-role">Super Admin</span>
-        </div>
+        <button
+          className={`sidebar-user ${menuOpen ? "open" : ""}`}
+          onClick={() => setMenuOpen((open) => !open)}
+        >
+          <div className="user-avatar">
+            {getInitials(displayName) || "AU"}
+          </div>
 
-        <span className="online-dot"></span>
+          <div className="user-details">
+            <p className="user-name">{displayName}</p>
+            <span className="user-role">{displayRole}</span>
+          </div>
+
+          <span className="online-dot"></span>
+        </button>
       </div>
     </aside>
   );

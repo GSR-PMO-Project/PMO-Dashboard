@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./hooks/useAuth";
 
 import Layout from "./components/layout/Layout";
 import LoginPage from "./pages/LoginPage";
+import LoadingSpinner from "./components/shared/LoadingSpinner";
 
 import OverviewPage from "./pages/OverviewPage";
 import ConferencesPage from "./pages/ConferencesPage";
@@ -16,7 +17,7 @@ import SettingsPage from "./pages/SettingsPage";
 
 function ProtectedRoute({ children }) {
   const { session, loading } = useAuth();
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <LoadingSpinner fullPage />;
   if (!session) return <Navigate to="/login" replace />;
   return children;
 }

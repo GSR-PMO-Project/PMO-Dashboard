@@ -8,6 +8,7 @@ import VIPInviteForm from "../components/UI/VIPInviteForm";
 import ConfirmDialog from "../components/UI/ConfirmDialog";
 import Toast from "../components/UI/Toast";
 import QRViewerModal from "../components/UI/QRViewerModal";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 
 import "../styles/RegistrationsPage.css";
 
@@ -615,9 +616,7 @@ async function handleRevokeInvite() {
             </div>
 
             {registrationsLoading ? (
-  <div className="registrations-empty-state">
-    Loading registrations...
-  </div>
+  <LoadingSpinner text="Loading registrations..." />
 ) : filteredAttendees.length > 0 ? (
   filteredAttendees.map((attendee) => (
     <div
@@ -689,9 +688,7 @@ async function handleRevokeInvite() {
             </div>
 
             {vipLoading ? (
-  <div className="registrations-empty-state">
-    Loading VIP invitations...
-  </div>
+  <LoadingSpinner text="Loading VIP invitations..." />
 ) : vipInvitations.length > 0 ? (
   vipInvitations.map((invitee) => (
     <div
@@ -787,9 +784,7 @@ async function handleRevokeInvite() {
             </div>
 
             {checkInLoading ? (
-           <div className="registrations-empty-state">
-             Loading check-in logs...
-           </div>
+           <LoadingSpinner text="Loading check-in logs..." />
           ) : filteredCheckInLogs.length > 0 ? (
            filteredCheckInLogs.map((log) => (
           <div

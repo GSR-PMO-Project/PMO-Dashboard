@@ -7,6 +7,7 @@ import { supabase } from "../lib/supabaseClient";
 import SpeakerForm from "../components/UI/SpeakerForm";
 import ConfirmDialog from "../components/UI/ConfirmDialog";
 import Toast from "../components/UI/Toast";
+import LoadingSpinner from "../components/shared/LoadingSpinner";
 
 import "../styles/SpeakersPage.css";
 
@@ -216,6 +217,10 @@ function SpeakersPage() {
     });
   }
 }
+
+  if (loading) {
+    return <LoadingSpinner fullPage text="Loading speakers..." />;
+  }
 
   return (
     <div className="speakers-page">

@@ -248,7 +248,7 @@ function CommunicationsPage() {
   ];
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <LoadingSpinner fullPage text="Loading communications..." />;
   }
 
   return (
