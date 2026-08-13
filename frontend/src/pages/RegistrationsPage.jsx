@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabaseClient";
 import { apiFetch } from "../lib/api";
 
 import VIPInviteForm from "../components/UI/VIPInviteForm";
+import EditExpiryForm from "../components/UI/EditExpiryForm";
 import ConfirmDialog from "../components/UI/ConfirmDialog";
 import Toast from "../components/UI/Toast";
 import QRViewerModal from "../components/UI/QRViewerModal";
@@ -12,7 +13,20 @@ import LoadingSpinner from "../components/shared/LoadingSpinner";
 
 import "../styles/RegistrationsPage.css";
 
+function getVipInvitationStatus(invitation) {
+  if (invitation.is_used) {
+    return "Used";
+  }
 
+  if (
+    invitation.expires_at &&
+    new Date(invitation.expires_at) < new Date()
+  ) {
+    return "Expired";
+  }
+
+  return "Active";
+}
 
 function RegistrationsPage() {
   const [activeTab, setActiveTab] = useState("registrations");
@@ -29,6 +43,7 @@ function RegistrationsPage() {
 
   const [showVIPForm, setShowVIPForm] = useState(false);
   const [vipToRevoke, setVipToRevoke] = useState(null);
+  const [vipToEditExpiry, setVipToEditExpiry] = useState(null);
   const [selectedAttendee, setSelectedAttendee] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -133,7 +148,8 @@ useEffect(() => {
         expiry: invitation.expires_at
           ? new Date(invitation.expires_at).toLocaleDateString()
           : "—",
-        status: invitation.is_used ? "Used" : "Active",
+        expiresAt: invitation.expires_at,
+        status: getVipInvitationStatus(invitation),
         invitationCode: invitation.invitation_code,
         usedAt: invitation.used_at,
         usedBy: invitation.used_by,
@@ -326,9 +342,8 @@ useEffect(() => {
             createdInvitation.expires_at
           ).toLocaleDateString()
         : "—",
-      status: createdInvitation.is_used
-        ? "Used"
-        : "Active",
+      expiresAt: createdInvitation.expires_at,
+      status: getVipInvitationStatus(createdInvitation),
       invitationCode:
         createdInvitation.invitation_code,
       usedAt: createdInvitation.used_at,
@@ -392,42 +407,13 @@ async function handleResendInvite(invitee) {
     }
 
     await apiFetch(
-      `/api/vip-invitations/${invitee.id}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          expires_at: new Date(
-            Date.now() + 7 * 24 * 60 * 60 * 1000
-          ).toISOString(),
-        }),
-      },
-      token
-    );
-
-    await apiFetch(
       `/api/vip-invitations/${invitee.id}/send`,
       { method: "POST" },
       token
     );
 
-    const newExpiry = new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000
-    );
-
-    setVipInvitations((previous) =>
-      previous.map((invitation) =>
-        invitation.id === invitee.id
-          ? {
-              ...invitation,
-              expiry:
-                newExpiry.toLocaleDateString(),
-            }
-          : invitation
-      )
-    );
-
     showSuccessToast(
-      "Invitation extended and resent successfully."
+      "Invitation resent successfully."
     );
   } catch (error) {
     console.error(
@@ -438,6 +424,68 @@ async function handleResendInvite(invitee) {
     setToast({
       message:
         "Unable to resend the invitation.",
+      type: "error",
+    });
+  }
+}
+
+async function handleUpdateExpiry(newExpiryDate) {
+  if (!vipToEditExpiry) return;
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+
+    if (!token) {
+      throw new Error("No active session was found.");
+    }
+
+    const updatedInvitation = await apiFetch(
+      `/api/vip-invitations/${vipToEditExpiry.id}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          expires_at: newExpiryDate.toISOString(),
+        }),
+      },
+      token
+    );
+
+    setVipInvitations((previous) =>
+      previous.map((invitation) =>
+        invitation.id === vipToEditExpiry.id
+          ? {
+              ...invitation,
+              expiry: new Date(
+                updatedInvitation.expires_at
+              ).toLocaleDateString(),
+              expiresAt: updatedInvitation.expires_at,
+              status: getVipInvitationStatus(
+                updatedInvitation
+              ),
+            }
+          : invitation
+      )
+    );
+
+    setVipToEditExpiry(null);
+
+    showSuccessToast(
+      "Expiry date updated successfully."
+    );
+  } catch (error) {
+    console.error(
+      "Failed to update expiry date:",
+      error
+    );
+
+    setToast({
+      message:
+        error.message ||
+        "Unable to update the expiry date.",
       type: "error",
     });
   }
@@ -715,8 +763,17 @@ async function handleRevokeInvite() {
         <button
           className="view-qr-button"
           onClick={() => handleResendInvite(invitee)}
+          disabled={invitee.status !== "Active"}
         >
           Resend
+        </button>
+
+        <button
+          className="view-qr-button"
+          onClick={() => setVipToEditExpiry(invitee)}
+          disabled={invitee.status === "Used"}
+        >
+          Edit Expiry
         </button>
 
         <button
@@ -825,6 +882,14 @@ async function handleRevokeInvite() {
           confirmText="Revoke"
           onCancel={() => setVipToRevoke(null)}
           onConfirm={handleRevokeInvite}
+        />
+      )}
+
+      {vipToEditExpiry && (
+        <EditExpiryForm
+          invitee={vipToEditExpiry}
+          onClose={() => setVipToEditExpiry(null)}
+          onSubmit={handleUpdateExpiry}
         />
       )}
 

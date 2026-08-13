@@ -293,7 +293,8 @@
   text-align: center;
 }
 
-.vip-revoke-button:disabled {
+.vip-revoke-button:disabled,
+.view-qr-button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
