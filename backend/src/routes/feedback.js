@@ -31,12 +31,12 @@ feedbackRouter.post(
   asyncHandler(async (req, res) => {
     const { user_id, session_id, speaker_communication_rating, session_efficiency_rating, additional_comments, is_anonymous } = req.body;
     const { data, error } = await supabaseAdmin.rpc("submit_session_feedback", {
-      user_id,
-      session_id,
-      speaker_communication_rating,
-      session_efficiency_rating,
-      additional_comments,
-      is_anonymous,
+      p_user_id: user_id,
+      p_session_id: session_id,
+      p_speaker_rating: speaker_communication_rating,
+      p_efficiency_rating: session_efficiency_rating,
+      p_comments: additional_comments,
+      p_anonymous: is_anonymous,
     });
     if (error) throw error;
     res.status(201).json(data);
@@ -48,11 +48,11 @@ feedbackRouter.post(
   asyncHandler(async (req, res) => {
     const { user_id, conference_id, overall_rating, comments, is_anonymous } = req.body;
     const { data, error } = await supabaseAdmin.rpc("submit_conference_feedback", {
-      user_id,
-      conference_id,
-      overall_rating,
-      comments,
-      is_anonymous,
+      p_user_id: user_id,
+      p_conference_id: conference_id,
+      p_overall_rating: overall_rating,
+      p_comments: comments,
+      p_anonymous: is_anonymous,
     });
     if (error) throw error;
     res.status(201).json(data);

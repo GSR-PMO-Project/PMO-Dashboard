@@ -20,9 +20,9 @@ vipInvitationsRouter.post(
   asyncHandler(async (req, res) => {
     const { email, code, conference_id } = req.body;
     const { data, error } = await supabaseAdmin.rpc("validate_vip_invitation", {
-      email,
-      code,
-      conference_id,
+      p_email: email,
+      p_invitation_code: code,
+      p_conference_id: conference_id,
     });
     if (error) throw error;
     res.json(data);
@@ -58,7 +58,10 @@ vipInvitationsRouter.post(
   "/redeem",
   asyncHandler(async (req, res) => {
     const { user_id, code } = req.body;
-    const { data, error } = await supabaseAdmin.rpc("redeem_vip_invitation", { user_id, code });
+    const { data, error } = await supabaseAdmin.rpc("redeem_vip_invitation", {
+      p_user_id: user_id,
+      p_invitation_code: code,
+    });
     if (error) throw error;
     res.json(data);
   })

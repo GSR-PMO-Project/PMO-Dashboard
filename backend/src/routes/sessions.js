@@ -61,8 +61,8 @@ sessionsRouter.post(
     }
 
     const { data, error } = await supabaseAdmin.rpc("register_for_session", {
-      user_id: req.body.user_id,
-      session_id: req.params.id,
+      p_user_id: req.body.user_id,
+      p_session_id: req.params.id,
     });
     if (error) throw error;
     res.json(data);
@@ -73,8 +73,8 @@ sessionsRouter.post(
   "/:id/cancel-registration",
   asyncHandler(async (req, res) => {
     const { data, error } = await supabaseAdmin.rpc("cancel_session_registration", {
-      user_id: req.body.user_id,
-      session_id: req.params.id,
+      p_user_id: req.body.user_id,
+      p_session_id: req.params.id,
     });
     if (error) throw error;
     res.json(data);
@@ -85,9 +85,9 @@ sessionsRouter.post(
   "/:id/checkin",
   asyncHandler(async (req, res) => {
     const { data, error } = await supabaseAdmin.rpc("checkin_to_session", {
-      user_id: req.body.user_id,
-      session_id: req.params.id,
-      scanned_by: req.staff.id,
+      p_user_id: req.body.user_id,
+      p_session_id: req.params.id,
+      p_scanned_by: req.staff.id,
     });
     if (error) throw error;
     res.json(data);
