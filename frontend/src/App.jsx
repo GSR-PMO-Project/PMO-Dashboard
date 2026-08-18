@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from "./hooks/useAuth";
 
 import Layout from "./components/layout/Layout";
 import LoginPage from "./pages/LoginPage";
+import AcceptInvitePage from "./pages/AcceptInvitePage";
 import LoadingSpinner from "./components/shared/LoadingSpinner";
 
 import OverviewPage from "./pages/OverviewPage";
@@ -28,6 +29,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/accept-invite" element={<AcceptInvitePage />} />
           <Route
             path="/"
             element={

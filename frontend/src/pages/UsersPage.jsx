@@ -6,6 +6,8 @@ import Modal from "../components/shared/Modal";
 import FormField from "../components/shared/FormField";
 import Table from "../components/shared/Table";
 import Tabs from "../components/shared/Tabs";
+import Toast from "../components/UI/Toast";
+import ConfirmDialog from "../components/UI/ConfirmDialog";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import "../styles/UsersPage.css";
@@ -31,14 +33,13 @@ const roleToTab = {
   attendee: "attendees",
 };
 
-const emptyForm = { full_name: "", email: "", role: "attendee" };
+const emptyForm = { full_name: "", email: "", role: "organizer" };
 
+// Only admin/staff accounts can be created from this form - speakers, VIPs and
+// attendees get their profiles from signup/registration, not an admin invite.
 const roleOptions = [
   { value: "admin", label: "admin" },
-  { value: "organizer", label: "organizer" },
-  { value: "speaker", label: "speaker" },
-  { value: "vip", label: "vip" },
-  { value: "attendee", label: "attendee" },
+  { value: "organizer", label: "organizer (staff)" },
 ];
 
 
@@ -64,6 +65,8 @@ function UsersPage() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [userToDelete, setUserToDelete] = useState(null);
 
   useEffect(() => {
     if (!session) return;
@@ -97,8 +100,19 @@ function UsersPage() {
     }
   };
 
-  const handleRevoke = (id) => {
-    setUsers(users.filter((u) => u.id !== id));
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+
+    try {
+      await apiFetch(`/api/profiles/${userToDelete.id}/revoke`, { method: "POST" }, session?.access_token);
+      setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+      setToast({ message: `${userToDelete.full_name || userToDelete.email} was deleted`, type: "success" });
+    } catch (err) {
+      console.error("Failed to delete user:", err);
+      setToast({ message: err.message || "Failed to delete user", type: "error" });
+    } finally {
+      setUserToDelete(null);
+    }
   };
 
    const openAddModal = () => {
@@ -123,11 +137,13 @@ function UsersPage() {
 
       setSaving(true);
       try {
-        const newUser = await apiFetch("/api/profiles", { method: "POST", body: JSON.stringify(form) }, session?.access_token);
+        const newUser = await apiFetch("/api/profiles/invite", { method: "POST", body: JSON.stringify(form) }, session?.access_token);
         setUsers((prev) => [...prev, newUser]);
         setShowAddModal(false);
+        setToast({ message: `Invitation sent to ${form.email}`, type: "success" });
       } catch (err) {
         console.error("Failed to add user:", err);
+        setToast({ message: err.message || "Failed to add user", type: "error" });
       } finally {
         setSaving(false);
       }
@@ -189,9 +205,9 @@ function UsersPage() {
           <>
             <button
               className="btn-revoke"
-              onClick={() => handleRevoke(u.id)}
+              onClick={() => setUserToDelete(u)}
             >
-              Revoke
+              Delete
             </button>
           </>
         ),
@@ -287,6 +303,23 @@ function UsersPage() {
   </Modal>
 )}
 
+      {userToDelete && (
+        <ConfirmDialog
+          title="Delete User?"
+          message={`Are you sure you want to delete ${userToDelete.full_name || userToDelete.email}? This permanently removes their account and access.`}
+          confirmText="Delete"
+          onCancel={() => setUserToDelete(null)}
+          onConfirm={handleDeleteUser}
+        />
+      )}
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

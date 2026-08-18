@@ -50,6 +50,21 @@ vipInvitationsRouter.post(
     }
 
     await sendVipInvitationEmail({ invitation, conferenceName });
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("id, role")
+      .eq("email", invitation.email)
+      .maybeSingle();
+
+    if (profile && profile.role === "attendee") {
+      const { error: roleError } = await supabaseAdmin
+        .from("profiles")
+        .update({ role: "vip" })
+        .eq("id", profile.id);
+      if (roleError) throw roleError;
+    }
+
     res.json({ sent: true });
   })
 );

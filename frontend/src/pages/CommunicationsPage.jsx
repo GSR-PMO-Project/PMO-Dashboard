@@ -221,6 +221,32 @@ function CommunicationsPage() {
     },
   ];
 
+  async function toggleNotificationRead(id, isRead) {
+    const readAt = isRead ? null : new Date().toISOString();
+    const previous = notifications;
+
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: !isRead, read_at: readAt } : n))
+    );
+
+    try {
+      await apiFetch(
+        `/api/notifications/${id}`,
+        { method: "PATCH", body: JSON.stringify({ is_read: !isRead, read_at: readAt }) },
+        session?.access_token
+      );
+    } catch (err) {
+      setNotifications(previous);
+      showToast(err.message, "error");
+    }
+  }
+
+  function markAllNotificationsAsRead() {
+    notifications.filter((n) => !n.is_read).forEach((n) => toggleNotificationRead(n.id, false));
+  }
+
+  const unreadNotificationCount = notifications.filter((n) => !n.is_read).length;
+
   const notificationColumns = [
     {
       key: "title",
@@ -244,6 +270,25 @@ function CommunicationsPage() {
       label: "Sent",
       className: "muted-text",
       render: (n) => (n.sent_at ? formatDateTime(n.sent_at) : "Not sent"),
+    },
+    {
+      key: "status",
+      label: "Status",
+      render: (n) =>
+        n.is_read ? (
+          <span className="status-badge status-published">Read</span>
+        ) : (
+          <span className="status-badge status-draft">Unread</span>
+        ),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      render: (n) => (
+        <button className="btn-edit" onClick={() => toggleNotificationRead(n.id, n.is_read)}>
+          {n.is_read ? "Mark as unread" : "Mark as read"}
+        </button>
+      ),
     },
   ];
 
@@ -350,6 +395,11 @@ function CommunicationsPage() {
               All Notifications{" "}
               <span className="badge badge-teal">{notifications.length}</span>
             </h3>
+            {unreadNotificationCount > 0 && (
+              <button className="btn-draft" onClick={markAllNotificationsAsRead}>
+                Mark all as read
+              </button>
+            )}
           </div>
 
           <Table
